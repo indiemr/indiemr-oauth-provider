@@ -2,6 +2,7 @@ package org.openmrs.module.indiemroauthprovider.api.impl;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import org.openmrs.Provider;
 import org.openmrs.api.impl.BaseOpenmrsService;
@@ -13,6 +14,7 @@ import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventRequest;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventResponse;
 import org.openmrs.module.indiemroauthprovider.dto.ResolveResult;
+import org.openmrs.module.indiemroauthprovider.dto.UpdateCalendarEventRequest;
 import org.openmrs.module.indiemroauthprovider.exception.TeleconsultException;
 import org.openmrs.module.indiemroauthprovider.model.ExternalResourceMapping;
 import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
@@ -20,6 +22,7 @@ import org.openmrs.module.indiemroauthprovider.model.TeleconsultLink;
 import org.openmrs.module.indiemroauthprovider.provider.MeetingProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventRequest;
 import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventResult;
+import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventUpdate;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingRequest;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingResult;
 import org.openmrs.module.indiemroauthprovider.provider.registry.CalendarProviderRegistry;
@@ -118,6 +121,42 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	}
 	
 	@Override
+	public CreateCalendarEventResponse updateCalendarEvent(Provider provider, UpdateCalendarEventRequest request)
+	        throws Exception {
+		validateUpdateRequest(request);
+		
+		String oauthProviderCode = request.getOauthProviderCode() != null ? request.getOauthProviderCode() : "GOOGLE";
+		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthProviderCode);
+		if (account == null) {
+			throw new IllegalStateException("No connected " + oauthProviderCode
+			        + " account for provider. Run connect-url first.");
+		}
+		
+		ExternalResourceMapping calendarMapping = findActiveCalendarMapping(provider, request.getResourceType(),
+		    request.getResourceUuid());
+		if (calendarMapping == null) {
+			throw new IllegalStateException("No calendar event found for " + request.getResourceType() + ":"
+			        + request.getResourceUuid());
+		}
+		
+		String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
+		CalendarEventUpdate update = toCalendarEventUpdate(request);
+		CalendarEventResult updated = calendarRegistry.require(oauthProviderCode).updateEvent(account, refreshToken,
+		    calendarMapping.getExternalResourceId(), update);
+		
+		if (request.getEnd() != null) {
+			teleconsultLinkDao.extendLinkExpiryForResource(request.getResourceType(), request.getResourceUuid(),
+			    addHours(request.getEnd(), (int) LINK_TTL_HOURS));
+		}
+		
+		CreateCalendarEventResponse response = new CreateCalendarEventResponse();
+		response.setResourceUuid(request.getResourceUuid());
+		response.setExternalEventId(updated.getExternalEventId());
+		response.setHtmlLink(updated.getHtmlLink());
+		return response;
+	}
+	
+	@Override
 	public ResolveResult resolveLink(String token) {
 		TeleconsultLink link = teleconsultLinkDao.findByToken(token);
 		if (link == null) {
@@ -156,6 +195,42 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		if (request.isMintJoinLink() && !request.isCreateMeet()) {
 			throw new IllegalArgumentException("mintJoinLink requires createMeet=true");
 		}
+	}
+	
+	private void validateUpdateRequest(UpdateCalendarEventRequest request) {
+		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceType is required");
+		}
+		if (request.getResourceUuid() == null || request.getResourceUuid().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceUuid is required");
+		}
+		boolean hasUpdate = request.getTitle() != null || request.getDescription() != null || request.getStart() != null
+		        || request.getEnd() != null || request.getTimeZone() != null;
+		if (!hasUpdate) {
+			throw new IllegalArgumentException("at least one of title, description, start, end, or timeZone is required");
+		}
+	}
+	
+	private ExternalResourceMapping findActiveCalendarMapping(Provider provider, String resourceType, String resourceUuid) {
+		List<ExternalResourceMapping> mappings = externalResourceMappingDao.findByProviderAndInternalResource(
+		    provider.getUuid(), resourceType, resourceUuid);
+		for (ExternalResourceMapping mapping : mappings) {
+			if (!mapping.isVoided()
+			        && ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT.equals(mapping.getExternalResourceType())) {
+				return mapping;
+			}
+		}
+		return null;
+	}
+	
+	private CalendarEventUpdate toCalendarEventUpdate(UpdateCalendarEventRequest request) {
+		CalendarEventUpdate update = new CalendarEventUpdate();
+		update.setTitle(request.getTitle());
+		update.setDescription(request.getDescription());
+		update.setStart(request.getStart());
+		update.setEnd(request.getEnd());
+		update.setTimeZone(request.getTimeZone());
+		return update;
 	}
 	
 	private void saveCalendarMapping(OAuthAccount account, Provider provider, String resourceType, String resourceUuid,

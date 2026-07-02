@@ -45,6 +45,7 @@ Configuration is loaded from environment variables and/or an `application.yml` f
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/events` | Yes | Create calendar event (optionally with Meet + join link) |
+| PUT | `/events` | Yes | Reschedule or update an existing calendar event |
 | DELETE | `/appointments/{uuid}/resources` | Yes | Cancel appointment resources |
 | GET | `/link/{token}` | No | Public patient landing page |
 
@@ -82,6 +83,21 @@ Calendar + Google Meet + shareable join link:
 ```
 
 Response fields: `resourceUuid`, `externalEventId`, `htmlLink`, and when Meet is created: `meetingUrl`, `joinToken`, `resolverUrl`.
+
+`PUT /events` — partial update by `resourceType` + `resourceUuid` (at least one of `title`, `description`, `start`, `end`, `timeZone`):
+
+```json
+{
+  "resourceType": "APPOINTMENT",
+  "resourceUuid": "appointment-uuid",
+  "title": "Rescheduled - John Doe",
+  "start": "2026-07-03T04:30:00.000Z",
+  "end": "2026-07-03T05:00:00.000Z",
+  "timeZone": "Asia/Kolkata"
+}
+```
+
+If `end` is updated and a join link exists, its expiry is extended accordingly.
 
 ## Integration tests
 

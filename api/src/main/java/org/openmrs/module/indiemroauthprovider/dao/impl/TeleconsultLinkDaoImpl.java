@@ -61,4 +61,16 @@ public class TeleconsultLinkDaoImpl implements TeleconsultLinkDao {
 		        .setParameter("type", ExternalResourceMapping.INTERNAL_APPOINTMENT).setParameter("uuid", appointmentUuid)
 		        .executeUpdate();
 	}
+	
+	@Override
+	public void extendLinkExpiryForResource(String resourceType, String resourceUuid, Date newExpiresAt) {
+		sessionFactory
+		        .getCurrentSession()
+		        .createQuery(
+		            "update TeleconsultLink l set l.expiresAt = :expiresAt, l.updatedAt = :now " + "where l.voided = false "
+		                    + "and l.externalResourceMapping.internalResourceType = :type "
+		                    + "and l.externalResourceMapping.internalResourceUuid = :uuid")
+		        .setParameter("expiresAt", newExpiresAt).setParameter("now", new Date()).setParameter("type", resourceType)
+		        .setParameter("uuid", resourceUuid).executeUpdate();
+	}
 }

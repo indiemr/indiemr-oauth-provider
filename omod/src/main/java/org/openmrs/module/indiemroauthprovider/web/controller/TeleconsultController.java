@@ -6,6 +6,7 @@ import java.util.Map;
 import org.openmrs.module.indiemroauthprovider.api.ExternalResourceService;
 import org.openmrs.module.indiemroauthprovider.api.TeleconsultService;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventRequest;
+import org.openmrs.module.indiemroauthprovider.dto.UpdateCalendarEventRequest;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.api.context.Context;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,22 @@ public class TeleconsultController extends BaseTeleconsultController {
 		try {
 			TeleconsultService service = Context.getService(TeleconsultService.class);
 			return new ResponseEntity<Object>(service.createCalendarEvent(getAuthenticatedProvider(), req), HttpStatus.OK);
+		}
+		catch (Exception e) {
+			return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+		}
+	}
+	
+	@RequestMapping(value = "/events", method = RequestMethod.PUT)
+	@ResponseBody
+	public ResponseEntity<?> updateEvent(@RequestBody UpdateCalendarEventRequest req) {
+		ResponseEntity<Map<String, Object>> authError = requireAuthenticatedProvider();
+		if (authError != null) {
+			return authError;
+		}
+		try {
+			TeleconsultService service = Context.getService(TeleconsultService.class);
+			return new ResponseEntity<Object>(service.updateCalendarEvent(getAuthenticatedProvider(), req), HttpStatus.OK);
 		}
 		catch (Exception e) {
 			return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());

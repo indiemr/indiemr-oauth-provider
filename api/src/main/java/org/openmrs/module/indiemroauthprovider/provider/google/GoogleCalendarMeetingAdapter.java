@@ -5,6 +5,7 @@ import org.openmrs.module.indiemroauthprovider.provider.CalendarProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.MeetingProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventRequest;
 import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventResult;
+import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventUpdate;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingRequest;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingResult;
 import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
@@ -68,6 +69,39 @@ public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, Me
 			}
 		}
 		return new MeetingResult(createdEvent.getId(), meetUrl, createdEvent.getId(), createdEvent.getHtmlLink());
+	}
+	
+	@Override
+	public CalendarEventResult updateEvent(OAuthAccount account, String decryptedRefreshToken, String externalEventId,
+	        CalendarEventUpdate update) throws Exception {
+		Calendar client = calendarClient(decryptedRefreshToken);
+		Event event = client.events().get("primary", externalEventId).execute();
+		
+		if (update.getTitle() != null) {
+			event.setSummary(update.getTitle());
+		}
+		if (update.getDescription() != null) {
+			event.setDescription(update.getDescription());
+		}
+		if (update.getStart() != null) {
+			EventDateTime start = event.getStart() != null ? event.getStart() : new EventDateTime();
+			start.setDateTime(new DateTime(update.getStart().getTime()));
+			if (update.getTimeZone() != null) {
+				start.setTimeZone(update.getTimeZone());
+			}
+			event.setStart(start);
+		}
+		if (update.getEnd() != null) {
+			EventDateTime end = event.getEnd() != null ? event.getEnd() : new EventDateTime();
+			end.setDateTime(new DateTime(update.getEnd().getTime()));
+			if (update.getTimeZone() != null) {
+				end.setTimeZone(update.getTimeZone());
+			}
+			event.setEnd(end);
+		}
+		
+		Event updated = client.events().patch("primary", externalEventId, event).execute();
+		return new CalendarEventResult(updated.getId(), updated.getHtmlLink());
 	}
 	
 	@Override

@@ -1,5 +1,7 @@
 package org.openmrs.module.indiemroauthprovider.dao;
 
+import java.util.Date;
+
 import org.openmrs.module.indiemroauthprovider.model.TeleconsultLink;
 
 public interface TeleconsultLinkDao {
@@ -11,4 +13,6 @@ public interface TeleconsultLinkDao {
 	void markStatus(String token, String status);
 	
 	void voidByAppointmentUuid(String appointmentUuid);
+	
+	void extendLinkExpiryForResource(String resourceType, String resourceUuid, Date newExpiresAt);
 }
