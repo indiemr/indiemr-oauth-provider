@@ -38,7 +38,7 @@ public class CryptoService {
 	private byte[] key() throws Exception {
 		String secret = moduleConfig.getEncKey();
 		if (secret == null || secret.trim().isEmpty()) {
-			throw new IllegalStateException("indiemroauthprovider.encKey global property is not set");
+			throw new IllegalStateException("INDIEMR_OAUTH_ENC_KEY is not set (env or application.yml)");
 		}
 		return MessageDigest.getInstance("SHA-256").digest(secret.getBytes(StandardCharsets.UTF_8));
 	}

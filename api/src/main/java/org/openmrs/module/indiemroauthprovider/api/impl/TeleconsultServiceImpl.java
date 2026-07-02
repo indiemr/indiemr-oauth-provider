@@ -2,7 +2,6 @@ package org.openmrs.module.indiemroauthprovider.api.impl;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.UUID;
 
 import org.openmrs.Provider;
 import org.openmrs.api.impl.BaseOpenmrsService;
@@ -71,6 +70,16 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	
 	@Override
 	public MintLinkResponse mintLink(Provider provider, MintLinkRequest request) throws Exception {
+		if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+			throw new IllegalArgumentException("title is required and must be provided by the caller");
+		}
+		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceType is required");
+		}
+		if (request.getResourceUuid() == null || request.getResourceUuid().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceUuid is required");
+		}
+		
 		String oauthProviderCode = request.getOauthProviderCode() != null ? request.getOauthProviderCode() : "GOOGLE";
 		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthProviderCode);
 		if (account == null) {
@@ -82,19 +91,15 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		Date now = new Date();
 		Date end = new Date(now.getTime() + MEET_WINDOW_SECONDS * 1000L);
 		
-		String summary = "Teleconsultation" + (request.getPatientName() != null ? " - " + request.getPatientName() : "");
 		MeetingProviderAdapter meetingProvider = meetingRegistry.require(oauthProviderCode);
-		MeetingResult meeting = meetingProvider.createMeeting(account, refreshToken, new MeetingRequest(summary, now, end,
-		        "UTC"));
-		
-		String appointmentUuid = request.getAppointmentUuid() != null ? request.getAppointmentUuid() : "apt-"
-		        + UUID.randomUUID().toString();
+		MeetingResult meeting = meetingProvider.createMeeting(account, refreshToken, new MeetingRequest(request.getTitle(),
+		        now, end, "UTC"));
 		
 		ExternalResourceMapping calendarMapping = new ExternalResourceMapping();
 		calendarMapping.setOauthAccount(account);
 		calendarMapping.setProvider(provider);
-		calendarMapping.setInternalResourceType(ExternalResourceMapping.INTERNAL_APPOINTMENT);
-		calendarMapping.setInternalResourceUuid(appointmentUuid);
+		calendarMapping.setInternalResourceType(request.getResourceType());
+		calendarMapping.setInternalResourceUuid(request.getResourceUuid());
 		calendarMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT);
 		calendarMapping.setExternalResourceId(meeting.getCalendarEventId() != null ? meeting.getCalendarEventId() : meeting
 		        .getMeetingId());
@@ -103,8 +108,8 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		ExternalResourceMapping meetMapping = new ExternalResourceMapping();
 		meetMapping.setOauthAccount(account);
 		meetMapping.setProvider(provider);
-		meetMapping.setInternalResourceType(ExternalResourceMapping.INTERNAL_APPOINTMENT);
-		meetMapping.setInternalResourceUuid(appointmentUuid);
+		meetMapping.setInternalResourceType(request.getResourceType());
+		meetMapping.setInternalResourceUuid(request.getResourceUuid());
 		meetMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_VIDEO_MEETING);
 		meetMapping.setExternalResourceId(meeting.getMeetingId());
 		externalResourceMappingDao.save(meetMapping);
@@ -116,8 +121,6 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		link.setMeetingUrl(meeting.getJoinUrl());
 		link.setMeetingId(meeting.getMeetingId());
 		link.setMeetingProvider(oauthProviderCode);
-		link.setPatientName(request.getPatientName());
-		link.setPatientPhone(request.getPatientPhone());
 		link.setExpiresAt(addHours(new Date(), (int) LINK_TTL_HOURS));
 		link.setVoided(false);
 		teleconsultLinkDao.save(link);
@@ -150,6 +153,16 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	@Override
 	public CreateCalendarEventResponse createCalendarEvent(Provider provider, CreateCalendarEventRequest request)
 	        throws Exception {
+		if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+			throw new IllegalArgumentException("title is required and must be provided by the caller");
+		}
+		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceType is required");
+		}
+		if (request.getResourceUuid() == null || request.getResourceUuid().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceUuid is required");
+		}
+		
 		String oauthProviderCode = request.getOauthProviderCode() != null ? request.getOauthProviderCode() : "GOOGLE";
 		
 		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthProviderCode);
@@ -163,22 +176,25 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		CalendarEventResult event = calendarRegistry.require(oauthProviderCode).createEvent(
 		    account,
 		    refreshToken,
-		    new CalendarEventRequest(request.getSummary(), request.getDescription(), request.getStart(), request.getEnd(),
+		    new CalendarEventRequest(request.getTitle(), request.getDescription(), request.getStart(), request.getEnd(),
 		            request.getTimeZone()));
 		
-		String appointmentUuid = request.getAppointmentUuid() != null ? request.getAppointmentUuid() : "apt-"
-		        + UUID.randomUUID().toString();
+		saveCalendarMapping(account, provider, request.getResourceType(), request.getResourceUuid(),
+		    event.getExternalEventId());
 		
+		return new CreateCalendarEventResponse(request.getResourceUuid(), event.getExternalEventId(), event.getHtmlLink());
+	}
+	
+	private void saveCalendarMapping(OAuthAccount account, Provider provider, String resourceType, String resourceUuid,
+	        String externalEventId) {
 		ExternalResourceMapping calendarMapping = new ExternalResourceMapping();
 		calendarMapping.setOauthAccount(account);
 		calendarMapping.setProvider(provider);
-		calendarMapping.setInternalResourceType(ExternalResourceMapping.INTERNAL_APPOINTMENT);
-		calendarMapping.setInternalResourceUuid(appointmentUuid);
+		calendarMapping.setInternalResourceType(resourceType);
+		calendarMapping.setInternalResourceUuid(resourceUuid);
 		calendarMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT);
-		calendarMapping.setExternalResourceId(event.getExternalEventId());
+		calendarMapping.setExternalResourceId(externalEventId);
 		externalResourceMappingDao.save(calendarMapping);
-		
-		return new CreateCalendarEventResponse(appointmentUuid, event.getExternalEventId(), event.getHtmlLink());
 	}
 	
 	private static Date addHours(Date date, int hours) {

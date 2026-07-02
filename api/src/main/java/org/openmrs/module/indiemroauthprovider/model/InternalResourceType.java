@@ -2,6 +2,8 @@ package org.openmrs.module.indiemroauthprovider.model;
 
 public enum InternalResourceType {
 	
+	PATIENT("PATIENT"),
+	
 	APPOINTMENT("APPOINTMENT");
 	
 	private final String code;

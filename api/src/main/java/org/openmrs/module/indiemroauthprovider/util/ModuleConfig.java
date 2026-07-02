@@ -1,35 +1,36 @@
 package org.openmrs.module.indiemroauthprovider.util;
 
-import org.openmrs.api.AdministrationService;
-import org.openmrs.api.context.Context;
-import org.openmrs.module.indiemroauthprovider.ModuleConstants;
+import javax.annotation.PostConstruct;
+
 import org.springframework.stereotype.Component;
 
 @Component("indiemroauthprovider.ModuleConfig")
 public class ModuleConfig {
 	
+	private ModuleConfigLoader loader;
+	
+	@PostConstruct
+	public void init() {
+		loader = new ModuleConfigLoader();
+	}
+	
 	public String getPublicBaseUrl() {
-		return getGlobalProperty(ModuleConstants.GP_PUBLIC_BASE_URL);
+		return loader.getPublicBaseUrl();
 	}
 	
 	public String getEncKey() {
-		return getGlobalProperty(ModuleConstants.GP_ENC_KEY);
+		return loader.getEncKey();
 	}
 	
 	public String getGoogleClientId() {
-		return getGlobalProperty(ModuleConstants.GP_GOOGLE_CLIENT_ID);
+		return loader.getGoogleClientId();
 	}
 	
 	public String getGoogleClientSecret() {
-		return getGlobalProperty(ModuleConstants.GP_GOOGLE_CLIENT_SECRET);
+		return loader.getGoogleClientSecret();
 	}
 	
 	public String getGoogleRedirectUri() {
-		return getGlobalProperty(ModuleConstants.GP_GOOGLE_REDIRECT_URI);
-	}
-	
-	private String getGlobalProperty(String property) {
-		AdministrationService adminService = Context.getAdministrationService();
-		return adminService.getGlobalProperty(property);
+		return loader.getGoogleRedirectUri();
 	}
 }

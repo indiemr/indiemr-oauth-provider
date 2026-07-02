@@ -1,14 +1,17 @@
 package org.openmrs.module.indiemroauthprovider.dto;
 
+/**
+ * Request to mint a teleconsult link.
+ */
 public class MintLinkRequest {
-	
-	private String patientName;
-	
-	private String patientPhone;
 	
 	private String oauthProviderCode = "GOOGLE";
 	
-	private String appointmentUuid;
+	private String title;
+	
+	private String resourceType;
+	
+	private String resourceUuid;
 	
 	public String getOauthProviderCode() {
 		return oauthProviderCode;
@@ -18,27 +21,27 @@ public class MintLinkRequest {
 		this.oauthProviderCode = oauthProviderCode;
 	}
 	
-	public String getAppointmentUuid() {
-		return appointmentUuid;
+	public String getTitle() {
+		return title;
 	}
 	
-	public void setAppointmentUuid(String appointmentUuid) {
-		this.appointmentUuid = appointmentUuid;
+	public void setTitle(String title) {
+		this.title = title;
 	}
 	
-	public String getPatientName() {
-		return patientName;
+	public String getResourceType() {
+		return resourceType;
 	}
 	
-	public void setPatientName(String patientName) {
-		this.patientName = patientName;
+	public void setResourceType(String resourceType) {
+		this.resourceType = resourceType;
 	}
 	
-	public String getPatientPhone() {
-		return patientPhone;
+	public String getResourceUuid() {
+		return resourceUuid;
 	}
 	
-	public void setPatientPhone(String patientPhone) {
-		this.patientPhone = patientPhone;
+	public void setResourceUuid(String resourceUuid) {
+		this.resourceUuid = resourceUuid;
 	}
 }

@@ -225,8 +225,6 @@
 			</column>
 			<column name="meeting_id" type="varchar(255)" />
 			<column name="meeting_provider" type="varchar(50)" />
-			<column name="patient_name" type="varchar(255)" />
-			<column name="patient_phone" type="varchar(32)" />
 			<column name="status" type="varchar(20)" defaultValue="created">
 				<constraints nullable="false" />
 			</column>
@@ -317,5 +315,4 @@
 			<column name="enabled" valueBoolean="false" />
 		</insert>
 	</changeSet>
-
 </databaseChangeLog>

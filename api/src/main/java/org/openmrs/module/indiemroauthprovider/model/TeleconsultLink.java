@@ -48,12 +48,6 @@ public class TeleconsultLink {
 	@Column(name = "meeting_provider", length = 50)
 	private String meetingProvider;
 	
-	@Column(name = "patient_name")
-	private String patientName;
-	
-	@Column(name = "patient_phone", length = 32)
-	private String patientPhone;
-	
 	@Column(nullable = false, length = 20)
 	private String status = STATUS_CREATED;
 	
@@ -123,22 +117,6 @@ public class TeleconsultLink {
 	
 	public void setMeetingProvider(String meetingProvider) {
 		this.meetingProvider = meetingProvider;
-	}
-	
-	public String getPatientName() {
-		return patientName;
-	}
-	
-	public void setPatientName(String patientName) {
-		this.patientName = patientName;
-	}
-	
-	public String getPatientPhone() {
-		return patientPhone;
-	}
-	
-	public void setPatientPhone(String patientPhone) {
-		this.patientPhone = patientPhone;
 	}
 	
 	public String getStatus() {
