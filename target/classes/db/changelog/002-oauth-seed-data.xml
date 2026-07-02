@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="100-seed-capabilities" author="indiemr">
+        <insert tableName="oauth_capability">
+            <column name="code" value="CALENDAR" />
+            <column name="display_name" value="Calendar" />
+        </insert>
+        <insert tableName="oauth_capability">
+            <column name="code" value="VIDEO_MEETING"/>
+            <column name="display_name" value="Video meeting"/>
+        </insert>
+        <insert tableName="oauth_capability">
+            <column name="code" value="EMAIL"/>
+            <column name="display_name" value="Email"/>
+        </insert>
+        <insert tableName="oauth_capability">
+            <column name="code" value="CONTACTS"/>
+            <column name="display_name" value="Contacts"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="110-seed-providers" author="indiemr">
+        <insert tableName="oauth_provider">
+            <column name="code" value="GOOGLE"/>
+            <column name="display_name" value="Google"/>
+            <column name="authorization_url" value="https://accounts.google.com/o/oauth2/v2/auth"/>
+            <column name="token_url" value="https://oauth2.googleapis.com/token"/>
+            <column name="userinfo_url" value="https://openidconnect.googleapis.com/v1/userinfo"/>
+            <column name="revocation_url" value="https://oauth2.googleapis.com/revoke"/>
+            <column name="supports_refresh_token" valueNumeric="1"/>
+            <column name="supports_pkce" valueNumeric="1"/>
+            <column name="enabled" valueNumeric="1"/>
+        </insert>
+        <insert tableName="oauth_provider">
+            <column name="code" value="MICROSOFT"/>
+            <column name="display_name" value="Microsoft"/>
+            <column name="authorization_url" value="https://login.microsoftonline.com/common/oauth2/v2.0/authorize"/>
+            <column name="token_url" value="https://login.microsoftonline.com/common/oauth2/v2.0/token"/>
+            <column name="userinfo_url" value="https://graph.microsoft.com/oidc/userinfo"/>
+            <column name="supports_refresh_token" valueNumeric="1"/>
+            <column name="supports_pkce" valueNumeric="1"/>
+            <column name="enabled" valueNumeric="0"/>
+        </insert>
+        <insert tableName="oauth_provider">
+            <column name="code" value="ZOOM"/>
+            <column name="display_name" value="Zoom"/>
+            <column name="supports_refresh_token" valueNumeric="1"/>
+            <column name="supports_pkce" valueNumeric="0"/>
+            <column name="enabled" valueNumeric="0"/>
+        </insert>
+        <insert tableName="oauth_provider">
+            <column name="code" value="WEBEX"/>
+            <column name="display_name" value="Webex"/>
+            <column name="supports_refresh_token" valueNumeric="1"/>
+            <column name="supports_pkce" valueNumeric="0"/>
+            <column name="enabled" valueNumeric="0"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

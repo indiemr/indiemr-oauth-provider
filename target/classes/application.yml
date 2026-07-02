@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/teleconsult_poc
+    username: root
+    password: secret
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  jpa:
+    hibernate:
+      ddl-auto: validate          # Liquibase owns schema
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        type:
+          preferred_boolean_jdbc_type: TINYINT
+
+teleconsult:
+  public-base-url: http://localhost:8080
+  enc-key: 908698183a7bd9a855cd7fa308b85e776387f447dda348cf8c9cb9ac83911e74   # same as Node
+
+google:
+  client-id: 711590727381-8phvuojcelets9lt0oml339j959nchph.apps.googleusercontent.com
+  client-secret: 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
+  redirect-uri: http://localhost:8080/api/v1/teleconsult/connect/callback
