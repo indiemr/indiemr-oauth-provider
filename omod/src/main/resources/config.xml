@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module configVersion="1.2">
+
+	<id>${project.parent.artifactId}</id>
+	<name>${project.parent.name}</name>
+	<version>${project.parent.version}</version>
+	<package>org.openmrs.module.indiemroauthprovider</package>
+	<author>IndiEMR Team</author>
+	<description>
+		${project.parent.description}
+	</description>
+
+	<activator>org.openmrs.module.indiemroauthprovider.IndiemrOauthProviderActivator</activator>
+
+	<require_version>${openmrsPlatformVersion}</require_version>
+
+	<require_modules>
+		<require_module>org.openmrs.module.webservices.rest</require_module>
+	</require_modules>
+
+	<packagesWithMappedClasses>org.openmrs.module.indiemroauthprovider.model</packagesWithMappedClasses>
+
+	<messages>
+		<lang>en</lang>
+		<file>messages.properties</file>
+	</messages>
+
+</module>
