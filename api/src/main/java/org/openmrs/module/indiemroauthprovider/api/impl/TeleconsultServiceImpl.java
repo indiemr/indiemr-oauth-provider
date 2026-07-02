@@ -12,8 +12,6 @@ import org.openmrs.module.indiemroauthprovider.dao.OAuthAccountDao;
 import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventRequest;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventResponse;
-import org.openmrs.module.indiemroauthprovider.dto.MintLinkRequest;
-import org.openmrs.module.indiemroauthprovider.dto.MintLinkResponse;
 import org.openmrs.module.indiemroauthprovider.dto.ResolveResult;
 import org.openmrs.module.indiemroauthprovider.exception.TeleconsultException;
 import org.openmrs.module.indiemroauthprovider.model.ExternalResourceMapping;
@@ -37,8 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeleconsultServiceImpl extends BaseOpenmrsService implements TeleconsultService {
 	
 	private static final long LINK_TTL_HOURS = 6;
-	
-	private static final long MEET_WINDOW_SECONDS = 3600;
 	
 	@Autowired
 	@Qualifier("indiemroauthprovider.MeetingProviderRegistry")
@@ -69,16 +65,9 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	private CalendarProviderRegistry calendarRegistry;
 	
 	@Override
-	public MintLinkResponse mintLink(Provider provider, MintLinkRequest request) throws Exception {
-		if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
-			throw new IllegalArgumentException("title is required and must be provided by the caller");
-		}
-		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
-			throw new IllegalArgumentException("resourceType is required");
-		}
-		if (request.getResourceUuid() == null || request.getResourceUuid().trim().isEmpty()) {
-			throw new IllegalArgumentException("resourceUuid is required");
-		}
+	public CreateCalendarEventResponse createCalendarEvent(Provider provider, CreateCalendarEventRequest request)
+	        throws Exception {
+		validateRequest(request);
 		
 		String oauthProviderCode = request.getOauthProviderCode() != null ? request.getOauthProviderCode() : "GOOGLE";
 		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthProviderCode);
@@ -88,46 +77,44 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		}
 		
 		String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
-		Date now = new Date();
-		Date end = new Date(now.getTime() + MEET_WINDOW_SECONDS * 1000L);
+		CalendarEventRequest calReq = new CalendarEventRequest(request.getTitle(), request.getDescription(),
+		        request.getStart(), request.getEnd(), request.getTimeZone());
 		
-		MeetingProviderAdapter meetingProvider = meetingRegistry.require(oauthProviderCode);
-		MeetingResult meeting = meetingProvider.createMeeting(account, refreshToken, new MeetingRequest(request.getTitle(),
-		        now, end, "UTC"));
+		CreateCalendarEventResponse response = new CreateCalendarEventResponse();
+		response.setResourceUuid(request.getResourceUuid());
 		
-		ExternalResourceMapping calendarMapping = new ExternalResourceMapping();
-		calendarMapping.setOauthAccount(account);
-		calendarMapping.setProvider(provider);
-		calendarMapping.setInternalResourceType(request.getResourceType());
-		calendarMapping.setInternalResourceUuid(request.getResourceUuid());
-		calendarMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT);
-		calendarMapping.setExternalResourceId(meeting.getCalendarEventId() != null ? meeting.getCalendarEventId() : meeting
-		        .getMeetingId());
-		externalResourceMappingDao.save(calendarMapping);
+		if (request.isCreateMeet()) {
+			MeetingProviderAdapter meetingProvider = meetingRegistry.require(oauthProviderCode);
+			MeetingResult meeting = meetingProvider.createMeeting(account, refreshToken,
+			    new MeetingRequest(request.getTitle(), request.getStart(), request.getEnd(), request.getTimeZone()));
+			
+			String calendarEventId = meeting.getCalendarEventId() != null ? meeting.getCalendarEventId() : meeting
+			        .getMeetingId();
+			saveCalendarMapping(account, provider, request.getResourceType(), request.getResourceUuid(), calendarEventId);
+			
+			ExternalResourceMapping meetMapping = saveMeetingMapping(account, provider, request.getResourceType(),
+			    request.getResourceUuid(), meeting.getMeetingId());
+			
+			response.setExternalEventId(calendarEventId);
+			response.setHtmlLink(meeting.getHtmlLink());
+			response.setMeetingUrl(meeting.getJoinUrl());
+			
+			if (request.isMintJoinLink()) {
+				TeleconsultLink link = mintTeleconsultLink(account, meetMapping, meeting, oauthProviderCode,
+				    request.getEnd());
+				response.setJoinToken(link.getToken());
+				response.setResolverUrl(buildResolverUrl(link.getToken()));
+			}
+		} else {
+			CalendarEventResult event = calendarRegistry.require(oauthProviderCode).createEvent(account, refreshToken,
+			    calReq);
+			saveCalendarMapping(account, provider, request.getResourceType(), request.getResourceUuid(),
+			    event.getExternalEventId());
+			response.setExternalEventId(event.getExternalEventId());
+			response.setHtmlLink(event.getHtmlLink());
+		}
 		
-		ExternalResourceMapping meetMapping = new ExternalResourceMapping();
-		meetMapping.setOauthAccount(account);
-		meetMapping.setProvider(provider);
-		meetMapping.setInternalResourceType(request.getResourceType());
-		meetMapping.setInternalResourceUuid(request.getResourceUuid());
-		meetMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_VIDEO_MEETING);
-		meetMapping.setExternalResourceId(meeting.getMeetingId());
-		externalResourceMappingDao.save(meetMapping);
-		
-		TeleconsultLink link = new TeleconsultLink();
-		link.setOauthAccount(account);
-		link.setExternalResourceMapping(meetMapping);
-		link.setToken(crypto.randomToken(18));
-		link.setMeetingUrl(meeting.getJoinUrl());
-		link.setMeetingId(meeting.getMeetingId());
-		link.setMeetingProvider(oauthProviderCode);
-		link.setExpiresAt(addHours(new Date(), (int) LINK_TTL_HOURS));
-		link.setVoided(false);
-		teleconsultLinkDao.save(link);
-		
-		String baseUrl = moduleConfig.getPublicBaseUrl();
-		String resolverUrl = baseUrl + "/openmrs/ws/rest/v1/teleconsult/link/" + link.getToken();
-		return new MintLinkResponse(link.getToken(), link.getMeetingUrl(), resolverUrl);
+		return response;
 	}
 	
 	@Override
@@ -150,9 +137,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		return new ResolveResult(link.getMeetingUrl(), providerDisplay);
 	}
 	
-	@Override
-	public CreateCalendarEventResponse createCalendarEvent(Provider provider, CreateCalendarEventRequest request)
-	        throws Exception {
+	private void validateRequest(CreateCalendarEventRequest request) {
 		if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
 			throw new IllegalArgumentException("title is required and must be provided by the caller");
 		}
@@ -162,27 +147,15 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		if (request.getResourceUuid() == null || request.getResourceUuid().trim().isEmpty()) {
 			throw new IllegalArgumentException("resourceUuid is required");
 		}
-		
-		String oauthProviderCode = request.getOauthProviderCode() != null ? request.getOauthProviderCode() : "GOOGLE";
-		
-		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthProviderCode);
-		if (account == null) {
-			throw new IllegalStateException("No connected " + oauthProviderCode
-			        + " account for provider. Run connect-url first.");
+		if (request.getStart() == null) {
+			throw new IllegalArgumentException("start is required");
 		}
-		
-		String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
-		
-		CalendarEventResult event = calendarRegistry.require(oauthProviderCode).createEvent(
-		    account,
-		    refreshToken,
-		    new CalendarEventRequest(request.getTitle(), request.getDescription(), request.getStart(), request.getEnd(),
-		            request.getTimeZone()));
-		
-		saveCalendarMapping(account, provider, request.getResourceType(), request.getResourceUuid(),
-		    event.getExternalEventId());
-		
-		return new CreateCalendarEventResponse(request.getResourceUuid(), event.getExternalEventId(), event.getHtmlLink());
+		if (request.getEnd() == null) {
+			throw new IllegalArgumentException("end is required");
+		}
+		if (request.isMintJoinLink() && !request.isCreateMeet()) {
+			throw new IllegalArgumentException("mintJoinLink requires createMeet=true");
+		}
 	}
 	
 	private void saveCalendarMapping(OAuthAccount account, Provider provider, String resourceType, String resourceUuid,
@@ -195,6 +168,38 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		calendarMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT);
 		calendarMapping.setExternalResourceId(externalEventId);
 		externalResourceMappingDao.save(calendarMapping);
+	}
+	
+	private ExternalResourceMapping saveMeetingMapping(OAuthAccount account, Provider provider, String resourceType,
+	        String resourceUuid, String meetingId) {
+		ExternalResourceMapping meetMapping = new ExternalResourceMapping();
+		meetMapping.setOauthAccount(account);
+		meetMapping.setProvider(provider);
+		meetMapping.setInternalResourceType(resourceType);
+		meetMapping.setInternalResourceUuid(resourceUuid);
+		meetMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_VIDEO_MEETING);
+		meetMapping.setExternalResourceId(meetingId);
+		externalResourceMappingDao.save(meetMapping);
+		return meetMapping;
+	}
+	
+	private TeleconsultLink mintTeleconsultLink(OAuthAccount account, ExternalResourceMapping meetMapping,
+	        MeetingResult meeting, String oauthProviderCode, Date eventEnd) {
+		TeleconsultLink link = new TeleconsultLink();
+		link.setOauthAccount(account);
+		link.setExternalResourceMapping(meetMapping);
+		link.setToken(crypto.randomToken(18));
+		link.setMeetingUrl(meeting.getJoinUrl());
+		link.setMeetingId(meeting.getMeetingId());
+		link.setMeetingProvider(oauthProviderCode);
+		link.setExpiresAt(addHours(eventEnd, (int) LINK_TTL_HOURS));
+		link.setVoided(false);
+		teleconsultLinkDao.save(link);
+		return link;
+	}
+	
+	private String buildResolverUrl(String token) {
+		return moduleConfig.getPublicBaseUrl() + "/openmrs/ws/rest/v1/teleconsult/link/" + token;
 	}
 	
 	private static Date addHours(Date date, int hours) {

@@ -44,25 +44,28 @@ Configuration is loaded from environment variables and/or an `application.yml` f
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/mint` | Yes | Create meeting + patient link |
-| POST | `/events` | Yes | Create calendar event |
+| POST | `/events` | Yes | Create calendar event (optionally with Meet + join link) |
 | DELETE | `/appointments/{uuid}/resources` | Yes | Cancel appointment resources |
 | GET | `/link/{token}` | No | Public patient landing page |
 
-### Request payloads
+### `POST /events` payload
 
-`POST /mint` example:
+Calendar-only:
 
 ```json
 {
   "oauthProviderCode": "GOOGLE",
-  "title": "Appointment - John Doe - +91 xxxxx",
+  "title": "Appointment - John Doe",
   "resourceType": "APPOINTMENT",
-  "resourceUuid": "appointment-uuid"
+  "resourceUuid": "appointment-uuid",
+  "start": "2026-07-02T10:00:00.000Z",
+  "end": "2026-07-02T11:00:00.000Z",
+  "timeZone": "UTC",
+  "createMeet": false
 }
 ```
 
-`POST /events` is generic and caller-driven.
+Calendar + Google Meet + shareable join link:
 
 ```json
 {
@@ -72,11 +75,13 @@ Configuration is loaded from environment variables and/or an `application.yml` f
   "resourceUuid": "appointment-uuid",
   "start": "2026-07-02T10:00:00.000Z",
   "end": "2026-07-02T11:00:00.000Z",
-  "timeZone": "UTC"
+  "timeZone": "Asia/Kolkata",
+  "createMeet": true,
+  "mintJoinLink": true
 }
 ```
 
-`POST /events` requires `title`, `resourceType`, and `resourceUuid`; no `resources` array is needed for this API.
+Response fields: `resourceUuid`, `externalEventId`, `htmlLink`, and when Meet is created: `meetingUrl`, `joinToken`, `resolverUrl`.
 
 ## Integration tests
 

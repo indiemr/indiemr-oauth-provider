@@ -8,10 +8,17 @@ public class MeetingResult {
 	
 	private final String meetingId;
 	
+	private final String htmlLink;
+	
 	public MeetingResult(String calendarEventId, String joinUrl, String meetingId) {
+		this(calendarEventId, joinUrl, meetingId, null);
+	}
+	
+	public MeetingResult(String calendarEventId, String joinUrl, String meetingId, String htmlLink) {
 		this.calendarEventId = calendarEventId;
 		this.joinUrl = joinUrl;
 		this.meetingId = meetingId;
+		this.htmlLink = htmlLink;
 	}
 	
 	public String getCalendarEventId() {
@@ -24,5 +31,9 @@ public class MeetingResult {
 	
 	public String getMeetingId() {
 		return meetingId;
+	}
+	
+	public String getHtmlLink() {
+		return htmlLink;
 	}
 }

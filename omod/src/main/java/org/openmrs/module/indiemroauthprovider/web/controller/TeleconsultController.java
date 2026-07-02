@@ -6,7 +6,6 @@ import java.util.Map;
 import org.openmrs.module.indiemroauthprovider.api.ExternalResourceService;
 import org.openmrs.module.indiemroauthprovider.api.TeleconsultService;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventRequest;
-import org.openmrs.module.indiemroauthprovider.dto.MintLinkRequest;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.api.context.Context;
 import org.springframework.http.HttpStatus;
@@ -22,16 +21,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/teleconsult")
 public class TeleconsultController extends BaseTeleconsultController {
 	
-	@RequestMapping(value = "/mint", method = RequestMethod.POST)
+	@RequestMapping(value = "/events", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> mint(@RequestBody MintLinkRequest req) {
+	public ResponseEntity<?> createEvent(@RequestBody CreateCalendarEventRequest req) {
 		ResponseEntity<Map<String, Object>> authError = requireAuthenticatedProvider();
 		if (authError != null) {
 			return authError;
 		}
 		try {
 			TeleconsultService service = Context.getService(TeleconsultService.class);
-			return new ResponseEntity<Object>(service.mintLink(getAuthenticatedProvider(), req), HttpStatus.OK);
+			return new ResponseEntity<Object>(service.createCalendarEvent(getAuthenticatedProvider(), req), HttpStatus.OK);
 		}
 		catch (Exception e) {
 			return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -51,22 +50,6 @@ public class TeleconsultController extends BaseTeleconsultController {
 			result.put("status", "CANCELLED");
 			result.put("appointmentUuid", appointmentUuid);
 			return new ResponseEntity<Map<String, String>>(result, HttpStatus.OK);
-		}
-		catch (Exception e) {
-			return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
-		}
-	}
-	
-	@RequestMapping(value = "/events", method = RequestMethod.POST)
-	@ResponseBody
-	public ResponseEntity<?> createEvent(@RequestBody CreateCalendarEventRequest req) {
-		ResponseEntity<Map<String, Object>> authError = requireAuthenticatedProvider();
-		if (authError != null) {
-			return authError;
-		}
-		try {
-			TeleconsultService service = Context.getService(TeleconsultService.class);
-			return new ResponseEntity<Object>(service.createCalendarEvent(getAuthenticatedProvider(), req), HttpStatus.OK);
 		}
 		catch (Exception e) {
 			return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());

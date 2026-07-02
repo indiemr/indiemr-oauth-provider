@@ -2,27 +2,41 @@ package org.openmrs.module.indiemroauthprovider.dto;
 
 public class CreateCalendarEventResponse {
 	
-	private String appointmentUuid;
+	private String resourceUuid;
 	
 	private String externalEventId;
 	
 	private String htmlLink;
 	
+	private String meetingUrl;
+	
+	private String joinToken;
+	
+	private String resolverUrl;
+	
 	public CreateCalendarEventResponse() {
 	}
 	
-	public CreateCalendarEventResponse(String appointmentUuid, String externalEventId, String htmlLink) {
-		this.appointmentUuid = appointmentUuid;
+	public CreateCalendarEventResponse(String resourceUuid, String externalEventId, String htmlLink) {
+		this.resourceUuid = resourceUuid;
 		this.externalEventId = externalEventId;
 		this.htmlLink = htmlLink;
 	}
 	
+	public String getResourceUuid() {
+		return resourceUuid;
+	}
+	
+	public void setResourceUuid(String resourceUuid) {
+		this.resourceUuid = resourceUuid;
+	}
+	
 	public String getAppointmentUuid() {
-		return appointmentUuid;
+		return resourceUuid;
 	}
 	
 	public void setAppointmentUuid(String appointmentUuid) {
-		this.appointmentUuid = appointmentUuid;
+		this.resourceUuid = appointmentUuid;
 	}
 	
 	public String getExternalEventId() {
@@ -39,5 +53,29 @@ public class CreateCalendarEventResponse {
 	
 	public void setHtmlLink(String htmlLink) {
 		this.htmlLink = htmlLink;
+	}
+	
+	public String getMeetingUrl() {
+		return meetingUrl;
+	}
+	
+	public void setMeetingUrl(String meetingUrl) {
+		this.meetingUrl = meetingUrl;
+	}
+	
+	public String getJoinToken() {
+		return joinToken;
+	}
+	
+	public void setJoinToken(String joinToken) {
+		this.joinToken = joinToken;
+	}
+	
+	public String getResolverUrl() {
+		return resolverUrl;
+	}
+	
+	public void setResolverUrl(String resolverUrl) {
+		this.resolverUrl = resolverUrl;
 	}
 }

@@ -67,7 +67,7 @@ public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, Me
 				throw new IllegalStateException("Google did not return a Meet link");
 			}
 		}
-		return new MeetingResult(createdEvent.getId(), meetUrl, createdEvent.getId());
+		return new MeetingResult(createdEvent.getId(), meetUrl, createdEvent.getId(), createdEvent.getHtmlLink());
 	}
 	
 	@Override

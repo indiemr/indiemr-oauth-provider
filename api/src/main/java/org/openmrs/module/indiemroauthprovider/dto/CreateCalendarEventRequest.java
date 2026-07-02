@@ -3,9 +3,11 @@ package org.openmrs.module.indiemroauthprovider.dto;
 import java.util.Date;
 
 /**
- * Request to create a provider calendar event linked to OpenMRS resources.
+ * Request to create a provider calendar event linked to an OpenMRS resource.
  * <p>
- * Preferred shape — caller sends the exact event title and the primary internal resource.
+ * Use {@code createMeet=false} for calendar-only, or {@code createMeet=true} for calendar + video
+ * meeting at the same {@code start}/{@code end}. Set {@code mintJoinLink=true} to also mint a
+ * shareable teleconsult join link (only valid when {@code createMeet=true}).
  * 
  * <pre>
  * {
@@ -16,12 +18,12 @@ import java.util.Date;
  *   "start": "2026-07-02T10:00:00.000Z",
  *   "end": "2026-07-02T11:00:00.000Z",
  *   "timeZone": "UTC",
- *   "description": "Optional notes"
+ *   "description": "Optional notes",
+ *   "createMeet": true,
+ *   "mintJoinLink": true
  * }
  * </pre>
- * The module uses the provided {@code title} as-is; title composition is owned by the caller.
  */
-
 public class CreateCalendarEventRequest {
 	
 	private String oauthProviderCode = "GOOGLE";
@@ -39,6 +41,10 @@ public class CreateCalendarEventRequest {
 	private Date end;
 	
 	private String timeZone = "UTC";
+	
+	private boolean createMeet;
+	
+	private boolean mintJoinLink;
 	
 	public String getOauthProviderCode() {
 		return oauthProviderCode;
@@ -72,16 +78,10 @@ public class CreateCalendarEventRequest {
 		this.resourceUuid = resourceUuid;
 	}
 	
-	/**
-	 * Backward-compat alias for older clients using "summary".
-	 */
 	public String getSummary() {
 		return title;
 	}
 	
-	/**
-	 * Backward-compat alias for older clients using "summary".
-	 */
 	public void setSummary(String summary) {
 		this.title = summary;
 	}
@@ -116,5 +116,21 @@ public class CreateCalendarEventRequest {
 	
 	public void setTimeZone(String timeZone) {
 		this.timeZone = timeZone;
+	}
+	
+	public boolean isCreateMeet() {
+		return createMeet;
+	}
+	
+	public void setCreateMeet(boolean createMeet) {
+		this.createMeet = createMeet;
+	}
+	
+	public boolean isMintJoinLink() {
+		return mintJoinLink;
+	}
+	
+	public void setMintJoinLink(boolean mintJoinLink) {
+		this.mintJoinLink = mintJoinLink;
 	}
 }
