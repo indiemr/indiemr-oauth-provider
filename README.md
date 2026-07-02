@@ -10,6 +10,53 @@ mvn clean install
 
 Output: `omod/target/indiemroauthprovider-1.0.0-SNAPSHOT.omod`
 
+## GitHub Packages
+
+Artifacts are published to GitHub Packages on push to `main` (snapshots) and on version tags (releases).
+
+### Consuming from another repo
+
+Add the repository and dependency to your `pom.xml`:
+
+```xml
+<repository>
+  <id>github-indiemr-oauth-provider</id>
+  <url>https://maven.pkg.github.com/indiemr/indiemr-oauth-provider</url>
+  <snapshots>
+    <enabled>true</enabled>
+  </snapshots>
+</repository>
+```
+
+```xml
+<!-- API jar -->
+<dependency>
+  <groupId>org.openmrs.module</groupId>
+  <artifactId>indiemroauthprovider-api</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+</dependency>
+
+<!-- OMOD for distro builds -->
+<dependency>
+  <groupId>org.openmrs.module</groupId>
+  <artifactId>indiemroauthprovider-omod</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <type>omod</type>
+</dependency>
+```
+
+Authenticate in `~/.m2/settings.xml` (or via `actions/setup-java` in CI) with a GitHub token that has `read:packages`:
+
+```xml
+<server>
+  <id>github-indiemr-oauth-provider</id>
+  <username>YOUR_GITHUB_USERNAME</username>
+  <password>YOUR_GITHUB_TOKEN</password>
+</server>
+```
+
+The server `id` must match the repository `id` in your `pom.xml`.
+
 ## Deploy
 
 Copy the `.omod` file to your OpenMRS `modules/` directory and restart.

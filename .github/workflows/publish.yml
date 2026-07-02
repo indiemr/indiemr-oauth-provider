@@ -1,0 +1,33 @@
+# name: Publish to GitHub Packages
+
+# on:
+#   push:
+#     branches: [main]
+#   workflow_dispatch:
+
+# jobs:
+#   publish:
+#     name: Build and publish Maven artifacts
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       packages: write
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Set up JDK 8
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: temurin
+#           java-version: 8
+#           cache: maven
+#           server-id: github
+
+#       - name: Publish snapshot artifacts
+#         run: |
+#           PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+#           if [[ "$PROJECT_VERSION" == *"-SNAPSHOT" ]]; then
+#             mvn --batch-mode --no-transfer-progress clean deploy -DskipTests
+#           else
+#             echo "Skipping publish: version $PROJECT_VERSION is not a SNAPSHOT."
+#           fi

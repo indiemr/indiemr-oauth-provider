@@ -1,0 +1,36 @@
+# name: Release to GitHub Packages
+
+# on:
+#   push:
+#     tags:
+#       - '[0-9]+.[0-9]+.[0-9]+'
+
+# jobs:
+#   release:
+#     name: Build and release Maven artifacts
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       packages: write
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Set up JDK 8
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: temurin
+#           java-version: 8
+#           cache: maven
+#           server-id: github
+
+#       - name: Compare Git tag with Maven version
+#         run: |
+#           GIT_TAG=${GITHUB_REF#refs/tags/}
+#           PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+#           if [ "$PROJECT_VERSION" != "$GIT_TAG" ]; then
+#             echo "Git tag ($GIT_TAG) does not match Maven version ($PROJECT_VERSION)."
+#             exit 1
+#           fi
+
+#       - name: Publish release artifacts
+#         run: mvn --batch-mode --no-transfer-progress clean deploy -DskipTests

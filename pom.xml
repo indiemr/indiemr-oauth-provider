@@ -15,6 +15,12 @@
 	<name>IndiEMR OAuth Provider Module</name>
 	<description>OAuth connect, calendar/meeting integration, and patient teleconsult links for IndiEMR providers.</description>
 
+	<scm>
+		<connection>scm:git:git://github.com/indiemr/indiemr-oauth-provider.git</connection>
+		<developerConnection>scm:git:https://github.com/indiemr/indiemr-oauth-provider.git</developerConnection>
+		<url>https://github.com/indiemr/indiemr-oauth-provider</url>
+	</scm>
+
 	<modules>
 		<module>api</module>
 		<module>omod</module>
@@ -118,6 +124,13 @@
 			<layout>default</layout>
 			<url>https://repo1.maven.org/maven2</url>
 		</repository>
+		<repository>
+			<id>github-indiemr-oauth-provider</id>
+			<url>https://maven.pkg.github.com/indiemr/indiemr-oauth-provider</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
@@ -129,4 +142,17 @@
 			</snapshots>
 		</pluginRepository>
 	</pluginRepositories>
+
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/indiemr/indiemr-oauth-provider</url>
+		</repository>
+		<snapshotRepository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/indiemr/indiemr-oauth-provider</url>
+		</snapshotRepository>
+	</distributionManagement>
 </project>
