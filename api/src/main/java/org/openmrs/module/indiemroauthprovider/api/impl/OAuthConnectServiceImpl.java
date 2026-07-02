@@ -1,5 +1,6 @@
 package org.openmrs.module.indiemroauthprovider.api.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +16,9 @@ import org.openmrs.module.indiemroauthprovider.dto.AccountStatusResponse;
 import org.openmrs.module.indiemroauthprovider.dto.ConnectResult;
 import org.openmrs.module.indiemroauthprovider.dto.ConnectState;
 import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
+import org.openmrs.module.indiemroauthprovider.model.OAuthCapabilityCode;
 import org.openmrs.module.indiemroauthprovider.model.OAuthProvider;
+import org.openmrs.module.indiemroauthprovider.model.OAuthVendorCode;
 import org.openmrs.module.indiemroauthprovider.provider.OAuthProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.dto.OAuthToken;
 import org.openmrs.module.indiemroauthprovider.provider.google.GoogleOAuthProviderAdapter;
@@ -29,7 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuthConnectService {
 	
-	private static final List<String> GOOGLE_CAPABILITIES = Arrays.asList("CALENDAR", "VIDEO_MEETING", "EMAIL");
+	private static final List<OAuthCapabilityCode> GOOGLE_CAPABILITIES = Arrays.asList(OAuthCapabilityCode.CALENDAR,
+	    OAuthCapabilityCode.VIDEO_MEETING, OAuthCapabilityCode.EMAIL);
 	
 	@Autowired
 	@Qualifier("indiemroauthprovider.OAuthProviderRegistry")
@@ -48,24 +52,26 @@ public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuth
 	private CryptoService crypto;
 	
 	@Override
-	public String buildConnectUrl(Provider provider, String providerDisplay, String oauthProviderCode) throws Exception {
-		if (oauthProviderDao.findEnabledByCode(oauthProviderCode) == null) {
-			throw new IllegalArgumentException("Provider not enabled: " + oauthProviderCode);
+	public String buildConnectUrl(Provider provider, String providerDisplay, OAuthVendorCode oauthVendor) throws Exception {
+		String vendorCode = oauthVendor.getCode();
+		if (oauthProviderDao.findEnabledByCode(vendorCode) == null) {
+			throw new IllegalArgumentException("Provider not enabled: " + vendorCode);
 		}
 		
-		String signed = crypto.signState(crypto.buildStatePayload(provider.getUuid(), providerDisplay, oauthProviderCode));
-		OAuthProviderAdapter adapter = oauthRegistry.require(oauthProviderCode);
+		String signed = crypto.signState(crypto.buildStatePayload(provider.getUuid(), providerDisplay, vendorCode));
+		OAuthProviderAdapter adapter = oauthRegistry.require(vendorCode);
 		return adapter.buildAuthorizationUrl(signed);
 	}
 	
 	@Override
 	public ConnectResult handleCallback(String code, String state) throws Exception {
 		ConnectState parsed = crypto.verifyState(state, ConnectState.class);
-		String oauthProviderCode = parsed.getOauthProviderCode();
+		OAuthVendorCode oauthVendor = OAuthVendorCode.fromCode(parsed.getOauthProviderCode());
+		String vendorCode = oauthVendor.getCode();
 		
-		OAuthProvider providerEntity = oauthProviderDao.findEnabledByCode(oauthProviderCode);
+		OAuthProvider providerEntity = oauthProviderDao.findEnabledByCode(vendorCode);
 		if (providerEntity == null) {
-			throw new IllegalStateException("Provider not enabled: " + oauthProviderCode);
+			throw new IllegalStateException("Provider not enabled: " + vendorCode);
 		}
 		
 		Provider openmrsProvider = Context.getProviderService().getProviderByUuid(parsed.getProviderUuid());
@@ -73,10 +79,10 @@ public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuth
 			throw new IllegalStateException("OpenMRS provider not found: " + parsed.getProviderUuid());
 		}
 		
-		OAuthProviderAdapter adapter = oauthRegistry.require(oauthProviderCode);
+		OAuthProviderAdapter adapter = oauthRegistry.require(vendorCode);
 		OAuthToken token = adapter.exchangeAuthorizationCode(code);
 		
-		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(openmrsProvider, oauthProviderCode);
+		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(openmrsProvider, vendorCode);
 		if (account == null) {
 			account = new OAuthAccount();
 		}
@@ -102,15 +108,14 @@ public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuth
 		account.setStatus(OAuthAccount.STATUS_ACTIVE);
 		account.setVoided(false);
 		
-		List<String> capabilities = capabilitiesForProvider(oauthProviderCode);
-		OAuthAccount saved = oauthAccountDao.saveWithCapabilities(account, capabilities);
+		OAuthAccount saved = oauthAccountDao.saveWithCapabilities(account, toCapabilityCodes(oauthVendor));
 		
-		return new ConnectResult(saved.getProvider().getUuid(), oauthProviderCode, saved.getExternalEmail());
+		return new ConnectResult(saved.getProvider().getUuid(), vendorCode, saved.getExternalEmail());
 	}
 	
 	@Override
-	public AccountStatusResponse getAccountStatus(Provider provider, String oauthProviderCode) {
-		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthProviderCode);
+	public AccountStatusResponse getAccountStatus(Provider provider, OAuthVendorCode oauthVendor) {
+		OAuthAccount account = oauthAccountDao.findByProviderAndProviderCode(provider, oauthVendor.getCode());
 		if (account == null) {
 			return null;
 		}
@@ -118,10 +123,18 @@ public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuth
 		        account.getScope());
 	}
 	
-	private List<String> capabilitiesForProvider(String oauthProviderCode) {
-		if (GoogleOAuthProviderAdapter.CODE.equals(oauthProviderCode)) {
-			return GOOGLE_CAPABILITIES;
+	private List<String> toCapabilityCodes(OAuthVendorCode oauthVendor) {
+		if (OAuthVendorCode.GOOGLE == oauthVendor) {
+			return capabilityCodes(GOOGLE_CAPABILITIES);
 		}
 		return Collections.emptyList();
+	}
+	
+	private List<String> capabilityCodes(List<OAuthCapabilityCode> capabilities) {
+		List<String> codes = new ArrayList<String>();
+		for (OAuthCapabilityCode capability : capabilities) {
+			codes.add(capability.getCode());
+		}
+		return codes;
 	}
 }

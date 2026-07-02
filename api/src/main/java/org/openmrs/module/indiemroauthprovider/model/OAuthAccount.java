@@ -33,7 +33,7 @@ public class OAuthAccount {
 	private Long id;
 	
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "provider_id", nullable = false)
+	@JoinColumn(name = "provider_uuid", referencedColumnName = "uuid", nullable = false)
 	private Provider provider;
 	
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)

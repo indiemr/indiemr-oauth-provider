@@ -9,6 +9,7 @@ import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
 import org.openmrs.module.indiemroauthprovider.provider.OAuthProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.dto.OAuthToken;
 import org.openmrs.module.indiemroauthprovider.provider.dto.OAuthUser;
+import org.openmrs.module.indiemroauthprovider.model.OAuthVendorCode;
 import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,7 +25,7 @@ import com.google.api.client.util.Base64;
 @Component("indiemroauthprovider.GoogleOAuthProviderAdapter")
 public class GoogleOAuthProviderAdapter implements OAuthProviderAdapter {
 	
-	public static final String CODE = "GOOGLE";
+	public static final String CODE = OAuthVendorCode.GOOGLE.getCode();
 	
 	private static final List<String> SCOPES = Arrays.asList("openid", "email",
 	    "https://www.googleapis.com/auth/calendar.events");

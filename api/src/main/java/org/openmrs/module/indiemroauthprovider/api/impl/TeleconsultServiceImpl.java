@@ -92,6 +92,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		
 		ExternalResourceMapping calendarMapping = new ExternalResourceMapping();
 		calendarMapping.setOauthAccount(account);
+		calendarMapping.setProvider(provider);
 		calendarMapping.setInternalResourceType(ExternalResourceMapping.INTERNAL_APPOINTMENT);
 		calendarMapping.setInternalResourceUuid(appointmentUuid);
 		calendarMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT);
@@ -101,6 +102,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		
 		ExternalResourceMapping meetMapping = new ExternalResourceMapping();
 		meetMapping.setOauthAccount(account);
+		meetMapping.setProvider(provider);
 		meetMapping.setInternalResourceType(ExternalResourceMapping.INTERNAL_APPOINTMENT);
 		meetMapping.setInternalResourceUuid(appointmentUuid);
 		meetMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_VIDEO_MEETING);
@@ -169,6 +171,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		
 		ExternalResourceMapping calendarMapping = new ExternalResourceMapping();
 		calendarMapping.setOauthAccount(account);
+		calendarMapping.setProvider(provider);
 		calendarMapping.setInternalResourceType(ExternalResourceMapping.INTERNAL_APPOINTMENT);
 		calendarMapping.setInternalResourceUuid(appointmentUuid);
 		calendarMapping.setExternalResourceType(ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT);

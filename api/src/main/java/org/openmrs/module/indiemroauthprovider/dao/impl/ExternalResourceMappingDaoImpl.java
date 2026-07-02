@@ -42,6 +42,20 @@ public class ExternalResourceMappingDaoImpl implements ExternalResourceMappingDa
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
+	public List<ExternalResourceMapping> findByProviderAndInternalResource(String providerUuid, String internalResourceType,
+	        String internalResourceUuid) {
+		return sessionFactory
+		        .getCurrentSession()
+		        .createQuery(
+		            "from ExternalResourceMapping m " + "join fetch m.oauthAccount a join fetch a.oauthProvider p "
+		                    + "where m.provider.uuid = :providerUuid and m.internalResourceType = :type "
+		                    + "and m.internalResourceUuid = :uuid and m.voided = false")
+		        .setParameter("providerUuid", providerUuid).setParameter("type", internalResourceType)
+		        .setParameter("uuid", internalResourceUuid).list();
+	}
+	
+	@Override
 	public void voidByInternalResource(String internalResourceType, String internalResourceUuid) {
 		sessionFactory
 		        .getCurrentSession()

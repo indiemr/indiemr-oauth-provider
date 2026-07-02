@@ -14,7 +14,8 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-https://localhost}"
-API="$BASE_URL/openmrs/ws/rest/v1/teleconsult"
+OAUTH_API="$BASE_URL/openmrs/ws/rest/v1/oauth"
+TELECONSULT_API="$BASE_URL/openmrs/ws/rest/v1/teleconsult"
 USER_CREDS="${USER_CREDS:-JohnDoe:e2e@Test}"
 CURL="curl -sk -u $USER_CREDS"
 
@@ -45,16 +46,16 @@ echo "  Connected"
 echo ""
 
 echo "=== 1. Unauthenticated check-token → 401 ==="
-HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" "$API/check-token")
+HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" "$OAUTH_API/check-token")
 assert_http "1.1 Unauthenticated check-token" "401" "$HTTP_CODE"
 
 echo "=== 2. Authenticated check-token → 200 ==="
-HTTP_CODE=$(curl -sk -u "$USER_CREDS" -o /dev/null -w "%{http_code}" "$API/check-token")
+HTTP_CODE=$(curl -sk -u "$USER_CREDS" -o /dev/null -w "%{http_code}" "$OAUTH_API/check-token")
 assert_http "2.1 Authenticated check-token" "200" "$HTTP_CODE"
 
 echo "=== 3. Connect URL → 200 ==="
 HTTP_CODE=$(curl -sk -u "$USER_CREDS" -o /dev/null -w "%{http_code}" \
-    "$API/connect-url?providerDisplay=Test%20Doctor&oauthProvider=GOOGLE")
+    "$OAUTH_API/connect-url?providerDisplay=Test%20Doctor&oauthProvider=GOOGLE")
 assert_http "3.1 Connect URL" "200" "$HTTP_CODE"
 
 echo ""

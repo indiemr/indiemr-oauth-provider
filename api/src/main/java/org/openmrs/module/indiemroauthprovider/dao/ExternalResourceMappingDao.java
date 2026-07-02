@@ -10,5 +10,8 @@ public interface ExternalResourceMappingDao {
 	
 	List<ExternalResourceMapping> findByInternalResource(String internalResourceType, String internalResourceUuid);
 	
+	List<ExternalResourceMapping> findByProviderAndInternalResource(String providerUuid, String internalResourceType,
+	        String internalResourceUuid);
+	
 	void voidByInternalResource(String internalResourceType, String internalResourceUuid);
 }

@@ -24,17 +24,22 @@ Set these global properties in OpenMRS Administration:
 | `indiemroauthprovider.encKey` | Hex encryption key for tokens and OAuth state |
 | `indiemroauthprovider.google.clientId` | Google OAuth client ID |
 | `indiemroauthprovider.google.clientSecret` | Google OAuth client secret |
-| `indiemroauthprovider.google.redirectUri` | Callback URL: `{publicBaseUrl}/openmrs/ws/rest/v1/teleconsult/connect/callback` |
+| `indiemroauthprovider.google.redirectUri` | Callback URL: `{publicBaseUrl}/openmrs/ws/rest/v1/oauth/connect/callback` |
 
 ## REST API
 
-Base path: `/openmrs/ws/rest/v1/teleconsult`
+### OAuth — `/openmrs/ws/rest/v1/oauth`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/connect-url` | Yes | Get OAuth authorization URL |
 | GET | `/check-token` | Yes | Check stored OAuth token status |
-| GET | `/connect/callback` | No | OAuth callback (Google redirect) |
+| GET | `/connect/callback` | No | Google OAuth redirect callback |
+
+### Teleconsult — `/openmrs/ws/rest/v1/teleconsult`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
 | POST | `/mint` | Yes | Create meeting + patient link |
 | POST | `/events` | Yes | Create calendar event |
 | DELETE | `/appointments/{uuid}/resources` | Yes | Cancel appointment resources |

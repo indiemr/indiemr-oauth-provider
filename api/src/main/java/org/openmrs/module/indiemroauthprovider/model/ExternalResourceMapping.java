@@ -12,15 +12,17 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.openmrs.Provider;
+
 @Entity
 @Table(name = "indiemr_external_resource_mapping")
 public class ExternalResourceMapping {
 	
-	public static final String INTERNAL_APPOINTMENT = "APPOINTMENT";
+	public static final String INTERNAL_APPOINTMENT = InternalResourceType.APPOINTMENT.getCode();
 	
-	public static final String EXTERNAL_CALENDAR_EVENT = "CALENDAR_EVENT";
+	public static final String EXTERNAL_CALENDAR_EVENT = ExternalResourceType.CALENDAR_EVENT.getCode();
 	
-	public static final String EXTERNAL_VIDEO_MEETING = "VIDEO_MEETING";
+	public static final String EXTERNAL_VIDEO_MEETING = ExternalResourceType.VIDEO_MEETING.getCode();
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +31,10 @@ public class ExternalResourceMapping {
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "oauth_account_id", nullable = false)
 	private OAuthAccount oauthAccount;
+	
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "provider_uuid", referencedColumnName = "uuid", nullable = false)
+	private Provider provider;
 	
 	@Column(name = "internal_resource_type", nullable = false, length = 64)
 	private String internalResourceType;
@@ -65,6 +71,14 @@ public class ExternalResourceMapping {
 	
 	public void setOauthAccount(OAuthAccount oauthAccount) {
 		this.oauthAccount = oauthAccount;
+	}
+	
+	public Provider getProvider() {
+		return provider;
+	}
+	
+	public void setProvider(Provider provider) {
+		this.provider = provider;
 	}
 	
 	public String getInternalResourceType() {

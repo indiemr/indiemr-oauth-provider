@@ -34,8 +34,8 @@ public class OAuthAccountDaoImpl implements OAuthAccountDao {
 		        .getCurrentSession()
 		        .createQuery(
 		            "from OAuthAccount a join fetch a.oauthProvider p "
-		                    + "where a.provider.providerId = :providerId and p.code = :providerCode and a.voided = false")
-		        .setParameter("providerId", provider.getProviderId()).setParameter("providerCode", oauthProviderCode)
+		                    + "where a.provider.uuid = :providerUuid and p.code = :providerCode and a.voided = false")
+		        .setParameter("providerUuid", provider.getUuid()).setParameter("providerCode", oauthProviderCode)
 		        .uniqueResult();
 	}
 	
@@ -46,8 +46,8 @@ public class OAuthAccountDaoImpl implements OAuthAccountDao {
 		        .getCurrentSession()
 		        .createQuery(
 		            "from OAuthAccount a join fetch a.oauthProvider p "
-		                    + "where a.provider.providerId = :providerId and a.voided = false")
-		        .setParameter("providerId", provider.getProviderId()).list();
+		                    + "where a.provider.uuid = :providerUuid and a.voided = false")
+		        .setParameter("providerUuid", provider.getUuid()).list();
 	}
 	
 	@Override
@@ -103,10 +103,16 @@ public class OAuthAccountDaoImpl implements OAuthAccountDao {
 			account.setStatus(OAuthAccount.STATUS_ACTIVE);
 		}
 		
-		OAuthProvider provider = (OAuthProvider) sessionFactory.getCurrentSession()
+		OAuthProvider oauthProvider = (OAuthProvider) sessionFactory.getCurrentSession()
 		        .createQuery("from OAuthProvider p where p.id = :id").setParameter("id", account.getOauthProvider().getId())
 		        .uniqueResult();
-		account.setOauthProvider(provider);
+		account.setOauthProvider(oauthProvider);
+		
+		if (account.getProvider() != null && account.getProvider().getProviderId() != null) {
+			Provider provider = (Provider) sessionFactory.getCurrentSession().get(Provider.class,
+			    account.getProvider().getProviderId());
+			account.setProvider(provider);
+		}
 		
 		if (account.getId() == null) {
 			sessionFactory.getCurrentSession().save(account);

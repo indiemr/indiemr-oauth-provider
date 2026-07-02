@@ -10,6 +10,8 @@ import org.openmrs.module.indiemroauthprovider.crypto.CryptoService;
 import org.openmrs.module.indiemroauthprovider.dao.ExternalResourceMappingDao;
 import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
 import org.openmrs.module.indiemroauthprovider.model.ExternalResourceMapping;
+import org.openmrs.module.indiemroauthprovider.model.ExternalResourceType;
+import org.openmrs.module.indiemroauthprovider.model.InternalResourceType;
 import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
 import org.openmrs.module.indiemroauthprovider.provider.registry.CalendarProviderRegistry;
 import org.openmrs.module.indiemroauthprovider.provider.registry.MeetingProviderRegistry;
@@ -43,10 +45,19 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 	private CryptoService crypto;
 	
 	@Override
+	public void voidInternalResources(InternalResourceType resourceType, String resourceUuid) throws Exception {
+		List<ExternalResourceMapping> mappings = mappingDao.findByInternalResource(resourceType.getCode(), resourceUuid);
+		deleteExternalResources(mappings);
+		mappingDao.voidByInternalResource(resourceType.getCode(), resourceUuid);
+	}
+	
+	@Override
 	public void cancelAppointmentResources(String appointmentUuid) throws Exception {
-		List<ExternalResourceMapping> mappings = mappingDao.findByInternalResource(
-		    ExternalResourceMapping.INTERNAL_APPOINTMENT, appointmentUuid);
-		
+		voidInternalResources(InternalResourceType.APPOINTMENT, appointmentUuid);
+		teleconsultLinkDao.voidByAppointmentUuid(appointmentUuid);
+	}
+	
+	private void deleteExternalResources(List<ExternalResourceMapping> mappings) throws Exception {
 		Set<String> deletedExternalIds = new HashSet<String>();
 		
 		for (ExternalResourceMapping mapping : mappings) {
@@ -58,14 +69,11 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 			String providerCode = account.getOauthProvider().getCode();
 			String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
 			
-			if (ExternalResourceMapping.EXTERNAL_CALENDAR_EVENT.equals(mapping.getExternalResourceType())) {
+			if (ExternalResourceType.CALENDAR_EVENT.getCode().equals(mapping.getExternalResourceType())) {
 				calendarRegistry.require(providerCode).deleteEvent(account, refreshToken, mapping.getExternalResourceId());
-			} else if (ExternalResourceMapping.EXTERNAL_VIDEO_MEETING.equals(mapping.getExternalResourceType())) {
+			} else if (ExternalResourceType.VIDEO_MEETING.getCode().equals(mapping.getExternalResourceType())) {
 				meetingRegistry.require(providerCode).deleteMeeting(account, refreshToken, mapping.getExternalResourceId());
 			}
 		}
-		
-		mappingDao.voidByInternalResource(ExternalResourceMapping.INTERNAL_APPOINTMENT, appointmentUuid);
-		teleconsultLinkDao.voidByAppointmentUuid(appointmentUuid);
 	}
 }
