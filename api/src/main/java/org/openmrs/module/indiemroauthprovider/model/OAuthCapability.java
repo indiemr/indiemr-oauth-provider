@@ -18,7 +18,7 @@ public class OAuthCapability {
 	@Column(nullable = false, unique = true, length = 50)
 	private String code;
 	
-	@Column(name = "display_name", nullable = false)
+	@Column(name = "display", nullable = false)
 	private String displayName;
 	
 	public Long getId() {

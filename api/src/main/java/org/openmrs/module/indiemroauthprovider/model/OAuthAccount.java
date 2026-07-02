@@ -46,7 +46,7 @@ public class OAuthAccount {
 	@Column(name = "external_email")
 	private String externalEmail;
 	
-	@Column(name = "display_name")
+	@Column(name = "display")
 	private String displayName;
 	
 	@Column(name = "access_token_enc", columnDefinition = "TEXT")

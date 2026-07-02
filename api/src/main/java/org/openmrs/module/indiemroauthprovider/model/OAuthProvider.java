@@ -23,7 +23,7 @@ public class OAuthProvider {
 	@Column(name = "authorization_url", length = 2048)
 	private String authorizationUrl;
 	
-	@Column(name = "display_name", nullable = false)
+	@Column(name = "display", nullable = false)
 	private String displayName;
 	
 	@Column(name = "token_url", length = 2048)

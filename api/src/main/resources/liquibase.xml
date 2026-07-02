@@ -15,7 +15,7 @@
 			<column name="code" type="varchar(50)">
 				<constraints nullable="false" unique="true" />
 			</column>
-			<column name="display_name" type="varchar(255)">
+			<column name="display" type="varchar(255)">
 				<constraints nullable="false" />
 			</column>
 			<column name="authorization_url" type="varchar(2048)" />
@@ -50,7 +50,7 @@
 			<column name="code" type="varchar(50)">
 				<constraints nullable="false" unique="true" />
 			</column>
-			<column name="display_name" type="varchar(255)">
+			<column name="display" type="varchar(255)">
 				<constraints nullable="false" />
 			</column>
 		</createTable>
@@ -70,7 +70,7 @@
 			</column>
 			<column name="external_account_id" type="varchar(255)" />
 			<column name="external_email" type="varchar(255)" />
-			<column name="display_name" type="varchar(255)" />
+			<column name="display" type="varchar(255)" />
 			<column name="access_token_enc" type="text" />
 			<column name="refresh_token_enc" type="text" />
 			<column name="id_token_enc" type="text" />
@@ -261,19 +261,19 @@
 		<comment>Seed OAuth capabilities</comment>
 		<insert tableName="indiemr_oauth_capability">
 			<column name="code" value="CALENDAR" />
-			<column name="display_name" value="Calendar" />
+			<column name="display" value="Calendar" />
 		</insert>
 		<insert tableName="indiemr_oauth_capability">
 			<column name="code" value="VIDEO_MEETING" />
-			<column name="display_name" value="Video meeting" />
+			<column name="display" value="Video meeting" />
 		</insert>
 		<insert tableName="indiemr_oauth_capability">
 			<column name="code" value="EMAIL" />
-			<column name="display_name" value="Email" />
+			<column name="display" value="Email" />
 		</insert>
 		<insert tableName="indiemr_oauth_capability">
 			<column name="code" value="CONTACTS" />
-			<column name="display_name" value="Contacts" />
+			<column name="display" value="Contacts" />
 		</insert>
 	</changeSet>
 
@@ -281,7 +281,7 @@
 		<comment>Seed OAuth providers</comment>
 		<insert tableName="indiemr_oauth_provider">
 			<column name="code" value="GOOGLE" />
-			<column name="display_name" value="Google" />
+			<column name="display" value="Google" />
 			<column name="authorization_url" value="https://accounts.google.com/o/oauth2/v2/auth" />
 			<column name="token_url" value="https://oauth2.googleapis.com/token" />
 			<column name="userinfo_url" value="https://openidconnect.googleapis.com/v1/userinfo" />
@@ -292,7 +292,7 @@
 		</insert>
 		<insert tableName="indiemr_oauth_provider">
 			<column name="code" value="MICROSOFT" />
-			<column name="display_name" value="Microsoft" />
+			<column name="display" value="Microsoft" />
 			<column name="authorization_url" value="https://login.microsoftonline.com/common/oauth2/v2.0/authorize" />
 			<column name="token_url" value="https://login.microsoftonline.com/common/oauth2/v2.0/token" />
 			<column name="userinfo_url" value="https://graph.microsoft.com/oidc/userinfo" />
@@ -302,14 +302,14 @@
 		</insert>
 		<insert tableName="indiemr_oauth_provider">
 			<column name="code" value="ZOOM" />
-			<column name="display_name" value="Zoom" />
+			<column name="display" value="Zoom" />
 			<column name="supports_refresh_token" valueBoolean="true" />
 			<column name="supports_pkce" valueBoolean="false" />
 			<column name="enabled" valueBoolean="false" />
 		</insert>
 		<insert tableName="indiemr_oauth_provider">
 			<column name="code" value="WEBEX" />
-			<column name="display_name" value="Webex" />
+			<column name="display" value="Webex" />
 			<column name="supports_refresh_token" valueBoolean="true" />
 			<column name="supports_pkce" valueBoolean="false" />
 			<column name="enabled" valueBoolean="false" />
