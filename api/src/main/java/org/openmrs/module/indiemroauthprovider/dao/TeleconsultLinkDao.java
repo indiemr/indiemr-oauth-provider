@@ -14,5 +14,7 @@ public interface TeleconsultLinkDao {
 	
 	void voidByAppointmentUuid(String appointmentUuid);
 	
+	void voidByInternalResource(String resourceType, String resourceUuid);
+	
 	void extendLinkExpiryForResource(String resourceType, String resourceUuid, Date newExpiresAt);
 }

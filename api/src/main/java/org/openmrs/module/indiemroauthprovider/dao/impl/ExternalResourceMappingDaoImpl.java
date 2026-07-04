@@ -64,4 +64,17 @@ public class ExternalResourceMappingDaoImpl implements ExternalResourceMappingDa
 		                    + "where m.internalResourceType = :type and m.internalResourceUuid = :uuid and m.voided = false")
 		        .setParameter("type", internalResourceType).setParameter("uuid", internalResourceUuid).executeUpdate();
 	}
+	
+	@Override
+	public void voidByProviderAndInternalResource(String providerUuid, String internalResourceType,
+	        String internalResourceUuid) {
+		sessionFactory
+		        .getCurrentSession()
+		        .createQuery(
+		            "update ExternalResourceMapping m set m.voided = true" + "where m.provider.uuid = :providerUuid "
+		                    + "and m.internalResourceType = :internalResourceType "
+		                    + "and m.internalResourceUuid = :internalResourceUuid" + "and m.voided = false")
+		        .setParameter("providerUuid", providerUuid).setParameter("internalResourceType", internalResourceType)
+		        .setParameter("internalResourceUuid", internalResourceUuid).executeUpdate();
+	}
 }

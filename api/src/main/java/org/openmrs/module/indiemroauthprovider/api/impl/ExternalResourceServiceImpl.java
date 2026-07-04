@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.openmrs.Provider;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.indiemroauthprovider.api.ExternalResourceService;
 import org.openmrs.module.indiemroauthprovider.crypto.CryptoService;
@@ -55,6 +56,29 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 	public void cancelAppointmentResources(String appointmentUuid) throws Exception {
 		voidInternalResources(InternalResourceType.APPOINTMENT, appointmentUuid);
 		teleconsultLinkDao.voidByAppointmentUuid(appointmentUuid);
+	}
+	
+	@Override
+	public void cancelResources(Provider provider, String internalResourceType, String internalResourceUuid)
+	        throws Exception {
+		if (internalResourceType == null || internalResourceType.trim().isEmpty()) {
+			throw new IllegalArgumentException("internalResourceType is required");
+		}
+		if (internalResourceUuid == null || internalResourceUuid.trim().isEmpty()) {
+			throw new IllegalArgumentException("internalResourceUuid is required");
+		}
+		if (provider == null) {
+			throw new IllegalArgumentException("provider is required");
+		}
+		List<ExternalResourceMapping> mappings = mappingDao.findByProviderAndInternalResource(provider.getUuid(),
+		    internalResourceType, internalResourceUuid);
+		if (mappings == null || mappings.isEmpty()) {
+			throw new IllegalStateException("No external resources found for " + internalResourceType + ":"
+			        + internalResourceUuid);
+		}
+		deleteExternalResources(mappings);
+		mappingDao.voidByProviderAndInternalResource(provider.getUuid(), internalResourceType, internalResourceUuid);
+		teleconsultLinkDao.voidByInternalResource(internalResourceType, internalResourceUuid);
 	}
 	
 	private void deleteExternalResources(List<ExternalResourceMapping> mappings) throws Exception {

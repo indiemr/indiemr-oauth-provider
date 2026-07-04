@@ -51,15 +51,7 @@ public class TeleconsultLinkDaoImpl implements TeleconsultLinkDao {
 	
 	@Override
 	public void voidByAppointmentUuid(String appointmentUuid) {
-		sessionFactory
-		        .getCurrentSession()
-		        .createQuery(
-		            "update TeleconsultLink l set l.voided = true, l.status = :status, l.updatedAt = :now "
-		                    + "where l.voided = false " + "and l.externalResourceMapping.internalResourceType = :type "
-		                    + "and l.externalResourceMapping.internalResourceUuid = :uuid")
-		        .setParameter("status", TeleconsultLink.STATUS_EXPIRED).setParameter("now", new Date())
-		        .setParameter("type", ExternalResourceMapping.INTERNAL_APPOINTMENT).setParameter("uuid", appointmentUuid)
-		        .executeUpdate();
+		voidByInternalResource(ExternalResourceMapping.INTERNAL_APPOINTMENT, appointmentUuid);
 	}
 	
 	@Override
@@ -67,10 +59,26 @@ public class TeleconsultLinkDaoImpl implements TeleconsultLinkDao {
 		sessionFactory
 		        .getCurrentSession()
 		        .createQuery(
-		            "update TeleconsultLink l set l.expiresAt = :expiresAt, l.updatedAt = :now " + "where l.voided = false "
+		            "update TeleconsultLink l set l.expiresAt = :expiresAt, l.updatedAt = :now " 
+					        + "where l.voided = false "
 		                    + "and l.externalResourceMapping.internalResourceType = :type "
 		                    + "and l.externalResourceMapping.internalResourceUuid = :uuid")
-		        .setParameter("expiresAt", newExpiresAt).setParameter("now", new Date()).setParameter("type", resourceType)
-		        .setParameter("uuid", resourceUuid).executeUpdate();
+		        .setParameter("expiresAt", newExpiresAt).
+				setParameter("now", new Date())
+				.setParameter("type", resourceType)
+		        .setParameter("uuid", resourceUuid)
+				.executeUpdate();
+	}
+	
+	@Override
+	public void voidByInternalResource(String resourceType, String resourceUuid) {
+		sessionFactory
+		        .getCurrentSession()
+		        .createQuery(
+		            "update TeleconsultLink l set l.voided = true, l.status = :status, l.updatedAt = :now"
+		                    + "where l.voided = false " + "and l.externalResourceMapping.internalResourceType = :type"
+		                    + "and l.externalResourceMapping.internalResourceUuid = :uuid")
+		        .setParameter("status", TeleconsultLink.STATUS_EXPIRED).setParameter("now", new Date())
+		        .setParameter("type", resourceType).setParameter("uuid", resourceUuid).executeUpdate();
 	}
 }

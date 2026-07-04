@@ -6,11 +6,14 @@ import java.util.List;
 
 import org.openmrs.Provider;
 import org.openmrs.api.impl.BaseOpenmrsService;
+import org.openmrs.module.indiemroauthprovider.api.ExternalResourceService;
 import org.openmrs.module.indiemroauthprovider.api.TeleconsultService;
 import org.openmrs.module.indiemroauthprovider.crypto.CryptoService;
 import org.openmrs.module.indiemroauthprovider.dao.ExternalResourceMappingDao;
 import org.openmrs.module.indiemroauthprovider.dao.OAuthAccountDao;
 import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
+import org.openmrs.module.indiemroauthprovider.dto.CancelCalendarEventRequest;
+import org.openmrs.module.indiemroauthprovider.dto.CancelCalendarEventResponse;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventRequest;
 import org.openmrs.module.indiemroauthprovider.dto.CreateCalendarEventResponse;
 import org.openmrs.module.indiemroauthprovider.dto.ResolveResult;
@@ -66,6 +69,10 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	@Autowired
 	@Qualifier("indiemroauthprovider.CalendarProviderRegistry")
 	private CalendarProviderRegistry calendarRegistry;
+	
+	@Autowired
+	@Qualifier("indiemroauthprovider.ExternalResourceService")
+	private ExternalResourceService externalResourceService;
 	
 	@Override
 	public CreateCalendarEventResponse createCalendarEvent(Provider provider, CreateCalendarEventRequest request)
@@ -154,6 +161,26 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		response.setExternalEventId(updated.getExternalEventId());
 		response.setHtmlLink(updated.getHtmlLink());
 		return response;
+	}
+	
+	@Override
+	public CancelCalendarEventResponse cancelCalendarEvent(Provider provider, CancelCalendarEventRequest request)
+	        throws Exception {
+		validateCancelRequest(request);
+		
+		externalResourceService.cancelResources(provider, request.getResourceType(), request.getResourceUuid());
+		
+		return new CancelCalendarEventResponse(request.getResourceType(), request.getResourceUuid());
+		
+	}
+	
+	private void validateCancelRequest(CancelCalendarEventRequest request) {
+		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceType is required");
+		}
+		if (request.getResourceUuid() == null || request.getResourceUuid().trim().isEmpty()) {
+			throw new IllegalArgumentException("resourceUuid is required");
+		}
 	}
 	
 	@Override

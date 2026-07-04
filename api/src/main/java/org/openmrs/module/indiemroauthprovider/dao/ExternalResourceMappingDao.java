@@ -14,4 +14,6 @@ public interface ExternalResourceMappingDao {
 	        String internalResourceUuid);
 	
 	void voidByInternalResource(String internalResourceType, String internalResourceUuid);
+	
+	void voidByProviderAndInternalResource(String providerUuid, String internalResourceType, String internalResourceUuid);
 }
