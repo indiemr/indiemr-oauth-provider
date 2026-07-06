@@ -8,7 +8,7 @@ import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventResult;
 import org.openmrs.module.indiemroauthprovider.provider.dto.CalendarEventUpdate;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingRequest;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingResult;
-import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
+import org.openmrs.module.indiemroauthprovider.util.ModuleConfigLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -33,8 +33,8 @@ import com.google.api.services.calendar.model.EventDateTime;
 public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, MeetingProviderAdapter {
 	
 	@Autowired
-	@Qualifier("indiemroauthprovider.ModuleConfig")
-	private ModuleConfig moduleConfig;
+	@Qualifier("indiemroauthprovider.ModuleConfigLoader")
+	private ModuleConfigLoader moduleConfigLoader;
 	
 	@Override
 	public String getProviderCode() {
@@ -140,7 +140,7 @@ public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, Me
 		        .setJsonFactory(json)
 		        .setTokenServerUrl(new GenericUrl("https://oauth2.googleapis.com/token"))
 		        .setClientAuthentication(
-		            new ClientParametersAuthentication(moduleConfig.getGoogleClientId(), moduleConfig
+		            new ClientParametersAuthentication(moduleConfigLoader.getGoogleClientId(), moduleConfigLoader
 		                    .getGoogleClientSecret())).build().setRefreshToken(refreshToken);
 		return new Calendar.Builder(transport, json, cred).setApplicationName("IndiEMR Teleconsult").build();
 	}

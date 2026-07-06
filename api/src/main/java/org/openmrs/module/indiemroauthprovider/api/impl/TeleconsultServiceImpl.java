@@ -30,7 +30,7 @@ import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingRequest;
 import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingResult;
 import org.openmrs.module.indiemroauthprovider.provider.registry.CalendarProviderRegistry;
 import org.openmrs.module.indiemroauthprovider.provider.registry.MeetingProviderRegistry;
-import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
+import org.openmrs.module.indiemroauthprovider.util.ModuleConfigLoader;
 
 public class TeleconsultServiceImpl extends BaseOpenmrsService implements TeleconsultService {
 	
@@ -46,7 +46,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	
 	private CryptoService crypto;
 	
-	private ModuleConfig moduleConfig;
+	private ModuleConfigLoader moduleConfigLoader;
 	
 	private CalendarProviderRegistry calendarRegistry;
 	
@@ -72,8 +72,8 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		this.crypto = crypto;
 	}
 	
-	public void setModuleConfig(ModuleConfig moduleConfig) {
-		this.moduleConfig = moduleConfig;
+	public void setModuleConfigLoader(ModuleConfigLoader moduleConfigLoader) {
+		this.moduleConfigLoader = moduleConfigLoader;
 	}
 	
 	public void setCalendarRegistry(CalendarProviderRegistry calendarRegistry) {
@@ -317,7 +317,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	}
 	
 	private String buildResolverUrl(String token) {
-		return moduleConfig.getPublicBaseUrl() + "/openmrs/ws/rest/v1/teleconsult/link/" + token;
+		return moduleConfigLoader.getPublicBaseUrl() + "/openmrs/ws/rest/v1/teleconsult/link/" + token;
 	}
 	
 	private static Date addHours(Date date, int hours) {

@@ -80,7 +80,7 @@
 				<property name="externalResourceMappingDao" ref="indiemroauthprovider.ExternalResourceMappingDao" />
 				<property name="teleconsultLinkDao" ref="indiemroauthprovider.TeleconsultLinkDao" />
 				<property name="crypto" ref="indiemroauthprovider.CryptoService" />
-				<property name="moduleConfig" ref="indiemroauthprovider.ModuleConfig" />
+				<property name="moduleConfigLoader" ref="indiemroauthprovider.ModuleConfigLoader" />
 				<property name="calendarRegistry" ref="indiemroauthprovider.CalendarProviderRegistry" />
 				<property name="externalResourceService" ref="indiemroauthprovider.ExternalResourceService" />
 			</bean>
