@@ -7,16 +7,14 @@ import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.indiemroauthprovider.dao.ExternalResourceMappingDao;
 import org.openmrs.module.indiemroauthprovider.model.ExternalResourceMapping;
 import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Repository;
 
-@Repository("indiemroauthprovider.ExternalResourceMappingDao")
 public class ExternalResourceMappingDaoImpl implements ExternalResourceMappingDao {
 	
-	@Autowired
-	@Qualifier("dbSessionFactory")
 	private DbSessionFactory sessionFactory;
+	
+	public void setSessionFactory(DbSessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
 	
 	@Override
 	public ExternalResourceMapping save(ExternalResourceMapping mapping) {

@@ -5,16 +5,14 @@ import java.util.List;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.indiemroauthprovider.dao.OAuthCapabilityDao;
 import org.openmrs.module.indiemroauthprovider.model.OAuthCapability;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Repository;
 
-@Repository("indiemroauthprovider.OAuthCapabilityDao")
 public class OAuthCapabilityDaoImpl implements OAuthCapabilityDao {
 	
-	@Autowired
-	@Qualifier("dbSessionFactory")
 	private DbSessionFactory sessionFactory;
+	
+	public void setSessionFactory(DbSessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
 	
 	@Override
 	public OAuthCapability findByCode(String code) {

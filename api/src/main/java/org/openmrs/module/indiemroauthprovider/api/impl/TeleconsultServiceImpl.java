@@ -31,48 +31,58 @@ import org.openmrs.module.indiemroauthprovider.provider.dto.MeetingResult;
 import org.openmrs.module.indiemroauthprovider.provider.registry.CalendarProviderRegistry;
 import org.openmrs.module.indiemroauthprovider.provider.registry.MeetingProviderRegistry;
 import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-@Service("indiemroauthprovider.TeleconsultService")
-@Transactional
 public class TeleconsultServiceImpl extends BaseOpenmrsService implements TeleconsultService {
 	
 	private static final long LINK_TTL_HOURS = 6;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.MeetingProviderRegistry")
 	private MeetingProviderRegistry meetingRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.OAuthAccountDao")
 	private OAuthAccountDao oauthAccountDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.ExternalResourceMappingDao")
 	private ExternalResourceMappingDao externalResourceMappingDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.TeleconsultLinkDao")
 	private TeleconsultLinkDao teleconsultLinkDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CryptoService")
 	private CryptoService crypto;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.ModuleConfig")
 	private ModuleConfig moduleConfig;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CalendarProviderRegistry")
 	private CalendarProviderRegistry calendarRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.ExternalResourceService")
 	private ExternalResourceService externalResourceService;
+	
+	public void setMeetingRegistry(MeetingProviderRegistry meetingRegistry) {
+		this.meetingRegistry = meetingRegistry;
+	}
+	
+	public void setOauthAccountDao(OAuthAccountDao oauthAccountDao) {
+		this.oauthAccountDao = oauthAccountDao;
+	}
+	
+	public void setExternalResourceMappingDao(ExternalResourceMappingDao externalResourceMappingDao) {
+		this.externalResourceMappingDao = externalResourceMappingDao;
+	}
+	
+	public void setTeleconsultLinkDao(TeleconsultLinkDao teleconsultLinkDao) {
+		this.teleconsultLinkDao = teleconsultLinkDao;
+	}
+	
+	public void setCrypto(CryptoService crypto) {
+		this.crypto = crypto;
+	}
+	
+	public void setModuleConfig(ModuleConfig moduleConfig) {
+		this.moduleConfig = moduleConfig;
+	}
+	
+	public void setCalendarRegistry(CalendarProviderRegistry calendarRegistry) {
+		this.calendarRegistry = calendarRegistry;
+	}
+	
+	public void setExternalResourceService(ExternalResourceService externalResourceService) {
+		this.externalResourceService = externalResourceService;
+	}
 	
 	@Override
 	public CreateCalendarEventResponse createCalendarEvent(Provider provider, CreateCalendarEventRequest request)

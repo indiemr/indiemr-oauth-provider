@@ -5,16 +5,14 @@ import java.util.Date;
 import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
 import org.openmrs.module.indiemroauthprovider.model.TeleconsultLink;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Repository;
 
-@Repository("indiemroauthprovider.TeleconsultLinkDao")
 public class TeleconsultLinkDaoImpl implements TeleconsultLinkDao {
 	
-	@Autowired
-	@Qualifier("dbSessionFactory")
 	private DbSessionFactory sessionFactory;
+	
+	public void setSessionFactory(DbSessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
 	
 	@Override
 	public TeleconsultLink save(TeleconsultLink link) {

@@ -16,34 +16,38 @@ import org.openmrs.module.indiemroauthprovider.model.InternalResourceType;
 import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
 import org.openmrs.module.indiemroauthprovider.provider.registry.CalendarProviderRegistry;
 import org.openmrs.module.indiemroauthprovider.provider.registry.MeetingProviderRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-@Service("indiemroauthprovider.ExternalResourceService")
-@Transactional
 public class ExternalResourceServiceImpl extends BaseOpenmrsService implements ExternalResourceService {
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.ExternalResourceMappingDao")
 	private ExternalResourceMappingDao mappingDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CalendarProviderRegistry")
 	private CalendarProviderRegistry calendarRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.MeetingProviderRegistry")
 	private MeetingProviderRegistry meetingRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.TeleconsultLinkDao")
 	private TeleconsultLinkDao teleconsultLinkDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CryptoService")
 	private CryptoService crypto;
+	
+	public void setMappingDao(ExternalResourceMappingDao mappingDao) {
+		this.mappingDao = mappingDao;
+	}
+	
+	public void setCalendarRegistry(CalendarProviderRegistry calendarRegistry) {
+		this.calendarRegistry = calendarRegistry;
+	}
+	
+	public void setMeetingRegistry(MeetingProviderRegistry meetingRegistry) {
+		this.meetingRegistry = meetingRegistry;
+	}
+	
+	public void setTeleconsultLinkDao(TeleconsultLinkDao teleconsultLinkDao) {
+		this.teleconsultLinkDao = teleconsultLinkDao;
+	}
+	
+	public void setCrypto(CryptoService crypto) {
+		this.crypto = crypto;
+	}
 	
 	@Override
 	public void voidInternalResources(InternalResourceType resourceType, String resourceUuid) throws Exception {
