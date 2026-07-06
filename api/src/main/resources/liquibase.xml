@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+	<changeSet id="indiemroauthprovider-2026-07-02-001" author="indiemr">
+		<comment>Create indiemr_oauth_provider table</comment>
+		<createTable tableName="indiemr_oauth_provider">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="code" type="varchar(50)">
+				<constraints nullable="false" unique="true" />
+			</column>
+			<column name="display" type="varchar(255)">
+				<constraints nullable="false" />
+			</column>
+			<column name="authorization_url" type="varchar(2048)" />
+			<column name="token_url" type="varchar(2048)" />
+			<column name="userinfo_url" type="varchar(2048)" />
+			<column name="revocation_url" type="varchar(2048)" />
+			<column name="supports_refresh_token" type="boolean" defaultValueBoolean="true">
+				<constraints nullable="false" />
+			</column>
+			<column name="supports_pkce" type="boolean" defaultValueBoolean="true">
+				<constraints nullable="false" />
+			</column>
+			<column name="enabled" type="boolean" defaultValueBoolean="true">
+				<constraints nullable="false" />
+			</column>
+			<column name="metadata_json" type="text" />
+			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+			<column name="updated_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-002" author="indiemr">
+		<comment>Create indiemr_oauth_capability table</comment>
+		<createTable tableName="indiemr_oauth_capability">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="code" type="varchar(50)">
+				<constraints nullable="false" unique="true" />
+			</column>
+			<column name="display" type="varchar(255)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-003" author="indiemr">
+		<comment>Create indiemr_oauth_account table</comment>
+		<createTable tableName="indiemr_oauth_account">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="provider_uuid" type="varchar(38)">
+				<constraints nullable="false" />
+			</column>
+			<column name="oauth_provider_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="external_account_id" type="varchar(255)" />
+			<column name="external_email" type="varchar(255)" />
+			<column name="display" type="varchar(255)" />
+			<column name="access_token_enc" type="text" />
+			<column name="refresh_token_enc" type="text" />
+			<column name="id_token_enc" type="text" />
+			<column name="scope" type="varchar(1024)" />
+			<column name="expires_at" type="datetime" />
+			<column name="status" type="varchar(32)" defaultValue="ACTIVE">
+				<constraints nullable="false" />
+			</column>
+			<column name="metadata_json" type="text" />
+			<column name="voided" type="boolean" defaultValueBoolean="false">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+			<column name="updated_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_oauth_account_provider"
+		    baseTableName="indiemr_oauth_account"
+		    baseColumnNames="provider_uuid"
+		    referencedTableName="provider"
+		    referencedColumnNames="uuid" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_oauth_account_oauth_provider"
+		    baseTableName="indiemr_oauth_account"
+		    baseColumnNames="oauth_provider_id"
+		    referencedTableName="indiemr_oauth_provider"
+		    referencedColumnNames="id" />
+
+		<addUniqueConstraint
+		    constraintName="uk_indiemr_oauth_account_provider_external"
+		    tableName="indiemr_oauth_account"
+		    columnNames="provider_uuid, oauth_provider_id, external_account_id" />
+
+		<createIndex indexName="idx_indiemr_oauth_account_provider" tableName="indiemr_oauth_account">
+			<column name="provider_uuid" />
+		</createIndex>
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-004" author="indiemr">
+		<comment>Create indiemr_oauth_account_capability table</comment>
+		<createTable tableName="indiemr_oauth_account_capability">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="oauth_account_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="capability_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_oauth_acct_cap_account"
+		    baseTableName="indiemr_oauth_account_capability"
+		    baseColumnNames="oauth_account_id"
+		    referencedTableName="indiemr_oauth_account"
+		    referencedColumnNames="id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_oauth_acct_cap_capability"
+		    baseTableName="indiemr_oauth_account_capability"
+		    baseColumnNames="capability_id"
+		    referencedTableName="indiemr_oauth_capability"
+		    referencedColumnNames="id" />
+
+		<addUniqueConstraint
+		    constraintName="uk_indiemr_oauth_account_capability"
+		    tableName="indiemr_oauth_account_capability"
+		    columnNames="oauth_account_id, capability_id" />
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-005" author="indiemr">
+		<comment>Create indiemr_external_resource_mapping table</comment>
+		<createTable tableName="indiemr_external_resource_mapping">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="oauth_account_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="provider_uuid" type="varchar(38)">
+				<constraints nullable="false" />
+			</column>
+			<column name="internal_resource_type" type="varchar(64)">
+				<constraints nullable="false" />
+			</column>
+			<column name="internal_resource_uuid" type="varchar(64)">
+				<constraints nullable="false" />
+			</column>
+			<column name="external_resource_type" type="varchar(64)">
+				<constraints nullable="false" />
+			</column>
+			<column name="external_resource_id" type="varchar(512)">
+				<constraints nullable="false" />
+			</column>
+			<column name="metadata_json" type="text" />
+			<column name="voided" type="boolean" defaultValueBoolean="false">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_ext_res_mapping_account"
+		    baseTableName="indiemr_external_resource_mapping"
+		    baseColumnNames="oauth_account_id"
+		    referencedTableName="indiemr_oauth_account"
+		    referencedColumnNames="id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_ext_res_mapping_provider"
+		    baseTableName="indiemr_external_resource_mapping"
+		    baseColumnNames="provider_uuid"
+		    referencedTableName="provider"
+		    referencedColumnNames="uuid" />
+
+		<createIndex indexName="idx_indiemr_ext_res_internal" tableName="indiemr_external_resource_mapping">
+			<column name="internal_resource_type" />
+			<column name="internal_resource_uuid" />
+		</createIndex>
+
+		<createIndex indexName="idx_indiemr_ext_res_provider" tableName="indiemr_external_resource_mapping">
+			<column name="provider_uuid" />
+			<column name="internal_resource_type" />
+		</createIndex>
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-006" author="indiemr">
+		<comment>Create indiemr_teleconsult_link table</comment>
+		<createTable tableName="indiemr_teleconsult_link">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="oauth_account_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="external_resource_mapping_id" type="bigint" />
+			<column name="token" type="varchar(64)">
+				<constraints nullable="false" unique="true" />
+			</column>
+			<column name="meeting_url" type="varchar(2048)">
+				<constraints nullable="false" />
+			</column>
+			<column name="meeting_id" type="varchar(255)" />
+			<column name="meeting_provider" type="varchar(50)" />
+			<column name="status" type="varchar(20)" defaultValue="created">
+				<constraints nullable="false" />
+			</column>
+			<column name="expires_at" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="voided" type="boolean" defaultValueBoolean="false">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+			<column name="updated_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_teleconsult_link_account"
+		    baseTableName="indiemr_teleconsult_link"
+		    baseColumnNames="oauth_account_id"
+		    referencedTableName="indiemr_oauth_account"
+		    referencedColumnNames="id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_teleconsult_link_ext_mapping"
+		    baseTableName="indiemr_teleconsult_link"
+		    baseColumnNames="external_resource_mapping_id"
+		    referencedTableName="indiemr_external_resource_mapping"
+		    referencedColumnNames="id" />
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-007" author="indiemr">
+		<comment>Seed OAuth capabilities</comment>
+		<insert tableName="indiemr_oauth_capability">
+			<column name="code" value="CALENDAR" />
+			<column name="display" value="Calendar" />
+		</insert>
+		<insert tableName="indiemr_oauth_capability">
+			<column name="code" value="VIDEO_MEETING" />
+			<column name="display" value="Video meeting" />
+		</insert>
+		<insert tableName="indiemr_oauth_capability">
+			<column name="code" value="EMAIL" />
+			<column name="display" value="Email" />
+		</insert>
+		<insert tableName="indiemr_oauth_capability">
+			<column name="code" value="CONTACTS" />
+			<column name="display" value="Contacts" />
+		</insert>
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-02-008" author="indiemr">
+		<comment>Seed OAuth providers</comment>
+		<insert tableName="indiemr_oauth_provider">
+			<column name="code" value="GOOGLE" />
+			<column name="display" value="Google" />
+			<column name="authorization_url" value="https://accounts.google.com/o/oauth2/v2/auth" />
+			<column name="token_url" value="https://oauth2.googleapis.com/token" />
+			<column name="userinfo_url" value="https://openidconnect.googleapis.com/v1/userinfo" />
+			<column name="revocation_url" value="https://oauth2.googleapis.com/revoke" />
+			<column name="supports_refresh_token" valueBoolean="true" />
+			<column name="supports_pkce" valueBoolean="true" />
+			<column name="enabled" valueBoolean="true" />
+		</insert>
+		<insert tableName="indiemr_oauth_provider">
+			<column name="code" value="MICROSOFT" />
+			<column name="display" value="Microsoft" />
+			<column name="authorization_url" value="https://login.microsoftonline.com/common/oauth2/v2.0/authorize" />
+			<column name="token_url" value="https://login.microsoftonline.com/common/oauth2/v2.0/token" />
+			<column name="userinfo_url" value="https://graph.microsoft.com/oidc/userinfo" />
+			<column name="supports_refresh_token" valueBoolean="true" />
+			<column name="supports_pkce" valueBoolean="true" />
+			<column name="enabled" valueBoolean="false" />
+		</insert>
+		<insert tableName="indiemr_oauth_provider">
+			<column name="code" value="ZOOM" />
+			<column name="display" value="Zoom" />
+			<column name="supports_refresh_token" valueBoolean="true" />
+			<column name="supports_pkce" valueBoolean="false" />
+			<column name="enabled" valueBoolean="false" />
+		</insert>
+		<insert tableName="indiemr_oauth_provider">
+			<column name="code" value="WEBEX" />
+			<column name="display" value="Webex" />
+			<column name="supports_refresh_token" valueBoolean="true" />
+			<column name="supports_pkce" valueBoolean="false" />
+			<column name="enabled" valueBoolean="false" />
+		</insert>
+	</changeSet>
+</databaseChangeLog>

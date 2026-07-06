@@ -1,0 +1,7 @@
+target/
+*.omod
+*.jar
+.idea/
+*.iml
+.DS_Store
+config/application.yml

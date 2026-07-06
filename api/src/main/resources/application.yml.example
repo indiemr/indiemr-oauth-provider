@@ -1,0 +1,8 @@
+teleconsult:
+  public-base-url: https://localhost
+  enc-key: ""
+
+google:
+  client-id: ""
+  client-secret: ""
+  redirect-uri: https://localhost/openmrs/ws/rest/v1/oauth/connect/callback
