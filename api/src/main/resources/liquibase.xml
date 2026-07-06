@@ -315,4 +315,28 @@
 			<column name="enabled" valueBoolean="false" />
 		</insert>
 	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-07-06-009" author="indiemr">
+		<comment>Seed module privileges</comment>
+		<insert tableName="privilege">
+			<column name="privilege" value="View OAuth Accounts" />
+			<column name="description" value="Able to view connected OAuth accounts" />
+			<column name="uuid" valueComputed="uuid()" />
+		</insert>
+		<insert tableName="privilege">
+			<column name="privilege" value="Manage OAuth Accounts" />
+			<column name="description" value="Able to manage OAuth accounts" />
+			<column name="uuid" valueComputed="uuid()" />
+		</insert>
+		<insert tableName="privilege">
+			<column name="privilege" value="View Events" />
+			<column name="description" value="Able to view calendar and meeting events" />
+			<column name="uuid" valueComputed="uuid()" />
+		</insert>
+		<insert tableName="privilege">
+			<column name="privilege" value="Manage Events" />
+			<column name="description" value="Able to create, update, and cancel calendar and meeting events" />
+			<column name="uuid" valueComputed="uuid()" />
+		</insert>
+	</changeSet>
 </databaseChangeLog>

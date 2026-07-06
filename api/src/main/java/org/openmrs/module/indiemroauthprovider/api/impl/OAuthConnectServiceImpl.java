@@ -52,8 +52,9 @@ public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuth
 	private CryptoService crypto;
 	
 	@Override
-	public String buildConnectUrl(Provider provider, String providerDisplay, OAuthVendorCode oauthVendor) throws Exception {
+	public String buildConnectUrl(Provider provider, OAuthVendorCode oauthVendor) throws Exception {
 		String vendorCode = oauthVendor.getCode();
+		String providerDisplay = provider.getName();
 		if (oauthProviderDao.findEnabledByCode(vendorCode) == null) {
 			throw new IllegalArgumentException("Provider not enabled: " + vendorCode);
 		}

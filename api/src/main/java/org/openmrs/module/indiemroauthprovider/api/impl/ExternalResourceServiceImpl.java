@@ -47,15 +47,19 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 	
 	@Override
 	public void voidInternalResources(InternalResourceType resourceType, String resourceUuid) throws Exception {
-		List<ExternalResourceMapping> mappings = mappingDao.findByInternalResource(resourceType.getCode(), resourceUuid);
-		deleteExternalResources(mappings);
-		mappingDao.voidByInternalResource(resourceType.getCode(), resourceUuid);
-		voidActiveTeleconsultLinks(mappings);
+		voidInternalResourcesByType(resourceType.getCode(), resourceUuid);
 	}
 	
 	@Override
 	public void cancelAppointmentResources(String appointmentUuid) throws Exception {
-		voidInternalResources(InternalResourceType.APPOINTMENT, appointmentUuid);
+		voidInternalResourcesByType(InternalResourceType.APPOINTMENT.getCode(), appointmentUuid);
+	}
+	
+	private void voidInternalResourcesByType(String resourceType, String resourceUuid) throws Exception {
+		List<ExternalResourceMapping> mappings = mappingDao.findByInternalResource(resourceType, resourceUuid);
+		deleteExternalResources(mappings);
+		mappingDao.voidByInternalResource(resourceType, resourceUuid);
+		voidActiveTeleconsultLinks(mappings);
 	}
 	
 	@Override
