@@ -16,4 +16,7 @@ public interface ExternalResourceMappingDao {
 	void voidByInternalResource(String internalResourceType, String internalResourceUuid);
 	
 	void voidByProviderAndInternalResource(String providerUuid, String internalResourceType, String internalResourceUuid);
+	
+	ExternalResourceMapping findActiveMeetingMapping(String providerUuid, String internalResourceType,
+	        String internalResourceUuid);
 }

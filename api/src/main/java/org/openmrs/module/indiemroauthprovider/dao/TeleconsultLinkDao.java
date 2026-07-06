@@ -12,9 +12,9 @@ public interface TeleconsultLinkDao {
 	
 	void markStatus(String token, String status);
 	
-	void voidByAppointmentUuid(String appointmentUuid);
+	TeleconsultLink findActiveByExternalResourceMappingId(Long externalResourceMappingId);
 	
-	void voidByInternalResource(String resourceType, String resourceUuid);
+	void extendExpiryByExternalResourceMappingId(Long externalResourceMappingId, Date newExpiresAt);
 	
-	void extendLinkExpiryForResource(String resourceType, String resourceUuid, Date newExpiresAt);
+	void voidActiveByExternalResourceMappingId(Long externalResourceMappingId);
 }

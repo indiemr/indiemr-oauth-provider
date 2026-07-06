@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.openmrs.api.db.hibernate.DbSessionFactory;
 import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
-import org.openmrs.module.indiemroauthprovider.model.ExternalResourceMapping;
 import org.openmrs.module.indiemroauthprovider.model.TeleconsultLink;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -50,35 +49,40 @@ public class TeleconsultLinkDaoImpl implements TeleconsultLinkDao {
 	}
 	
 	@Override
-	public void voidByAppointmentUuid(String appointmentUuid) {
-		voidByInternalResource(ExternalResourceMapping.INTERNAL_APPOINTMENT, appointmentUuid);
-	}
-	
-	@Override
-	public void extendLinkExpiryForResource(String resourceType, String resourceUuid, Date newExpiresAt) {
+	public void extendExpiryByExternalResourceMappingId(Long externalResourceMappingId, Date newExpiresAt) {
 		sessionFactory
 		        .getCurrentSession()
 		        .createQuery(
-		            "update TeleconsultLink l set l.expiresAt = :expiresAt, l.updatedAt = :now " 
-					        + "where l.voided = false "
-		                    + "and l.externalResourceMapping.internalResourceType = :type "
-		                    + "and l.externalResourceMapping.internalResourceUuid = :uuid")
-		        .setParameter("expiresAt", newExpiresAt).
-				setParameter("now", new Date())
-				.setParameter("type", resourceType)
-		        .setParameter("uuid", resourceUuid)
-				.executeUpdate();
+		            "update TeleconsultLink l " + "set l.expiresAt = :expiresAt, l.updatedAt = :now "
+		                    + "where l.voided = false " + "and l.externalResourceMapping.id = :mappingId")
+		        .setParameter("expiresAt", newExpiresAt).setParameter("now", new Date())
+		        .setParameter("mappingId", externalResourceMappingId).executeUpdate();
 	}
 	
 	@Override
-	public void voidByInternalResource(String resourceType, String resourceUuid) {
+	public void voidActiveByExternalResourceMappingId(Long externalResourceMappingId) {
+		if (externalResourceMappingId == null) {
+			return;
+		}
 		sessionFactory
 		        .getCurrentSession()
 		        .createQuery(
-		            "update TeleconsultLink l set l.voided = true, l.status = :status, l.updatedAt = :now"
-		                    + "where l.voided = false " + "and l.externalResourceMapping.internalResourceType = :type"
-		                    + "and l.externalResourceMapping.internalResourceUuid = :uuid")
+		            "update TeleconsultLink l " + "set l.voided = true, l.status = :status, l.updatedAt = :now "
+		                    + "where l.voided = false " + "and l.externalResourceMapping.id = :mappingId")
 		        .setParameter("status", TeleconsultLink.STATUS_EXPIRED).setParameter("now", new Date())
-		        .setParameter("type", resourceType).setParameter("uuid", resourceUuid).executeUpdate();
+		        .setParameter("mappingId", externalResourceMappingId).executeUpdate();
+	}
+	
+	@Override
+	public TeleconsultLink findActiveByExternalResourceMappingId(Long externalResourceMappingId) {
+		if (externalResourceMappingId == null) {
+			return null;
+		}
+		
+		return (TeleconsultLink) sessionFactory
+		        .getCurrentSession()
+		        .createQuery(
+		            "from TeleconsultLink l " + "where l.voided = false " + "and l.externalResourceMapping.id = :mappingId")
+		        .setParameter("mappingId", externalResourceMappingId).uniqueResult();
 	}
 }

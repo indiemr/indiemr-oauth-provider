@@ -50,12 +50,12 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 		List<ExternalResourceMapping> mappings = mappingDao.findByInternalResource(resourceType.getCode(), resourceUuid);
 		deleteExternalResources(mappings);
 		mappingDao.voidByInternalResource(resourceType.getCode(), resourceUuid);
+		voidActiveTeleconsultLinks(mappings);
 	}
 	
 	@Override
 	public void cancelAppointmentResources(String appointmentUuid) throws Exception {
 		voidInternalResources(InternalResourceType.APPOINTMENT, appointmentUuid);
-		teleconsultLinkDao.voidByAppointmentUuid(appointmentUuid);
 	}
 	
 	@Override
@@ -78,7 +78,7 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 		}
 		deleteExternalResources(mappings);
 		mappingDao.voidByProviderAndInternalResource(provider.getUuid(), internalResourceType, internalResourceUuid);
-		teleconsultLinkDao.voidByInternalResource(internalResourceType, internalResourceUuid);
+		voidActiveTeleconsultLinks(mappings);
 	}
 	
 	private void deleteExternalResources(List<ExternalResourceMapping> mappings) throws Exception {
@@ -97,6 +97,14 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 				calendarRegistry.require(providerCode).deleteEvent(account, refreshToken, mapping.getExternalResourceId());
 			} else if (ExternalResourceType.VIDEO_MEETING.getCode().equals(mapping.getExternalResourceType())) {
 				meetingRegistry.require(providerCode).deleteMeeting(account, refreshToken, mapping.getExternalResourceId());
+			}
+		}
+	}
+	
+	private void voidActiveTeleconsultLinks(List<ExternalResourceMapping> mappings) {
+		for (ExternalResourceMapping mapping : mappings) {
+			if (ExternalResourceMapping.EXTERNAL_VIDEO_MEETING.equals(mapping.getExternalResourceType())) {
+				teleconsultLinkDao.voidActiveByExternalResourceMappingId(mapping.getId());
 			}
 		}
 	}

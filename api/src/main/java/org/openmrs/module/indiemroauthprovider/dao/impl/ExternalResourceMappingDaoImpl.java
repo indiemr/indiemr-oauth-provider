@@ -71,10 +71,23 @@ public class ExternalResourceMappingDaoImpl implements ExternalResourceMappingDa
 		sessionFactory
 		        .getCurrentSession()
 		        .createQuery(
-		            "update ExternalResourceMapping m set m.voided = true" + "where m.provider.uuid = :providerUuid "
+		            "update ExternalResourceMapping m set m.voided = true " + "where m.provider.uuid = :providerUuid "
 		                    + "and m.internalResourceType = :internalResourceType "
-		                    + "and m.internalResourceUuid = :internalResourceUuid" + "and m.voided = false")
+		                    + "and m.internalResourceUuid = :internalResourceUuid " + "and m.voided = false")
 		        .setParameter("providerUuid", providerUuid).setParameter("internalResourceType", internalResourceType)
 		        .setParameter("internalResourceUuid", internalResourceUuid).executeUpdate();
+	}
+	
+	@Override
+	public ExternalResourceMapping findActiveMeetingMapping(String providerUuid, String internalResourceType,
+	        String internalResourceUuid) {
+		List<ExternalResourceMapping> mappings = findByProviderAndInternalResource(providerUuid, internalResourceType,
+		    internalResourceUuid);
+		for (ExternalResourceMapping m : mappings) {
+			if (ExternalResourceMapping.EXTERNAL_VIDEO_MEETING.equals(m.getExternalResourceType())) {
+				return m;
+			}
+		}
+		return null;
 	}
 }

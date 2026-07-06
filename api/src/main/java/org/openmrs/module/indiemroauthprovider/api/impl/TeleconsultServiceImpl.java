@@ -151,9 +151,15 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		CalendarEventResult updated = calendarRegistry.require(oauthProviderCode).updateEvent(account, refreshToken,
 		    calendarMapping.getExternalResourceId(), update);
 		
-		if (request.getEnd() != null) {
-			teleconsultLinkDao.extendLinkExpiryForResource(request.getResourceType(), request.getResourceUuid(),
-			    addHours(request.getEnd(), (int) LINK_TTL_HOURS));
+		ExternalResourceMapping meetMapping = externalResourceMappingDao.findActiveMeetingMapping(provider.getUuid(),
+		    request.getResourceType(), request.getResourceUuid());
+		
+		if (request.getEnd() != null && meetMapping != null) {
+			TeleconsultLink link = teleconsultLinkDao.findActiveByExternalResourceMappingId(meetMapping.getId());
+			if (link != null) {
+				teleconsultLinkDao.extendExpiryByExternalResourceMappingId(meetMapping.getId(),
+				    addHours(request.getEnd(), (int) LINK_TTL_HOURS));
+			}
 		}
 		
 		CreateCalendarEventResponse response = new CreateCalendarEventResponse();
