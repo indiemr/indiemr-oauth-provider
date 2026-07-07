@@ -150,15 +150,77 @@
 	</changeSet>
 
 	<changeSet id="indiemroauthprovider-2026-07-02-005" author="indiemr">
-		<comment>Create indiemr_external_resource_mapping table</comment>
-		<createTable tableName="indiemr_external_resource_mapping">
+		<comment>Create external event tables</comment>
+		<createTable tableName="indiemr_external_event">
 			<column name="id" type="bigint" autoIncrement="true">
-				<constraints primaryKey="true" nullable="false" />
+				<constraints nullable="false" primaryKey="true" />
 			</column>
 			<column name="oauth_account_id" type="bigint">
 				<constraints nullable="false" />
 			</column>
-			<column name="provider_uuid" type="varchar(38)">
+			<column name="external_resource_type" type="varchar(64)">
+				<constraints nullable="false" />
+			</column>
+			<column name="external_event_id" type="varchar(512)">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="varchar(20)" defaultValue="active">
+				<constraints nullable="false" />
+			</column>
+			<column name="metadata_json" type="text" />
+			<column name="creator" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="date_created" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="changed_by" type="int" />
+			<column name="date_changed" type="datetime" />
+			<column name="voided" type="boolean" defaultValueBoolean="false">
+				<constraints nullable="false" />
+			</column>
+			<column name="voided_by" type="int" />
+			<column name="date_voided" type="datetime" />
+			<column name="void_reason" type="varchar(255)" />
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_external_event_account"
+		    baseTableName="indiemr_external_event"
+		    baseColumnNames="oauth_account_id"
+		    referencedTableName="indiemr_oauth_account"
+		    referencedColumnNames="id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_external_event_creator"
+		    baseTableName="indiemr_external_event"
+		    baseColumnNames="creator"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_external_event_changed_by"
+		    baseTableName="indiemr_external_event"
+		    baseColumnNames="changed_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_external_event_voided_by"
+		    baseTableName="indiemr_external_event"
+		    baseColumnNames="voided_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<createIndex tableName="indiemr_external_event" indexName="idx_indiemr_external_event_resource_type">
+			<column name="external_resource_type" />
+		</createIndex>
+
+		<createTable tableName="indiemr_resource_event_mapping">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="external_event_id" type="bigint">
 				<constraints nullable="false" />
 			</column>
 			<column name="internal_resource_type" type="varchar(64)">
@@ -167,94 +229,115 @@
 			<column name="internal_resource_uuid" type="varchar(64)">
 				<constraints nullable="false" />
 			</column>
-			<column name="external_resource_type" type="varchar(64)">
+			<column name="creator" type="int">
 				<constraints nullable="false" />
 			</column>
-			<column name="external_resource_id" type="varchar(512)">
+			<column name="date_created" type="datetime">
 				<constraints nullable="false" />
 			</column>
-			<column name="metadata_json" type="text" />
 			<column name="voided" type="boolean" defaultValueBoolean="false">
 				<constraints nullable="false" />
 			</column>
-			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
-				<constraints nullable="false" />
-			</column>
+			<column name="voided_by" type="int" />
+			<column name="date_voided" type="datetime" />
+			<column name="void_reason" type="varchar(255)" />
 		</createTable>
 
 		<addForeignKeyConstraint
-		    constraintName="fk_indiemr_ext_res_mapping_account"
-		    baseTableName="indiemr_external_resource_mapping"
-		    baseColumnNames="oauth_account_id"
-		    referencedTableName="indiemr_oauth_account"
+		    constraintName="fk_indiemr_res_event_mapping_event"
+		    baseTableName="indiemr_resource_event_mapping"
+		    baseColumnNames="external_event_id"
+		    referencedTableName="indiemr_external_event"
 		    referencedColumnNames="id" />
 
 		<addForeignKeyConstraint
-		    constraintName="fk_indiemr_ext_res_mapping_provider"
-		    baseTableName="indiemr_external_resource_mapping"
-		    baseColumnNames="provider_uuid"
-		    referencedTableName="provider"
-		    referencedColumnNames="uuid" />
+		    constraintName="fk_indiemr_res_event_mapping_creator"
+		    baseTableName="indiemr_resource_event_mapping"
+		    baseColumnNames="creator"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
 
-		<createIndex indexName="idx_indiemr_ext_res_internal" tableName="indiemr_external_resource_mapping">
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_res_event_mapping_voided_by"
+		    baseTableName="indiemr_resource_event_mapping"
+		    baseColumnNames="voided_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<createIndex indexName="idx_indiemr_res_event_internal" tableName="indiemr_resource_event_mapping">
 			<column name="internal_resource_type" />
 			<column name="internal_resource_uuid" />
-		</createIndex>
-
-		<createIndex indexName="idx_indiemr_ext_res_provider" tableName="indiemr_external_resource_mapping">
-			<column name="provider_uuid" />
-			<column name="internal_resource_type" />
 		</createIndex>
 	</changeSet>
 
 	<changeSet id="indiemroauthprovider-2026-07-02-006" author="indiemr">
-		<comment>Create indiemr_teleconsult_link table</comment>
-		<createTable tableName="indiemr_teleconsult_link">
+		<comment>Create indiemr_meeting table</comment>
+		<createTable tableName="indiemr_meeting">
 			<column name="id" type="bigint" autoIncrement="true">
 				<constraints primaryKey="true" nullable="false" />
 			</column>
-			<column name="oauth_account_id" type="bigint">
+			<column name="external_event_id" type="bigint">
 				<constraints nullable="false" />
 			</column>
-			<column name="external_resource_mapping_id" type="bigint" />
 			<column name="token" type="varchar(64)">
 				<constraints nullable="false" unique="true" />
 			</column>
 			<column name="meeting_url" type="varchar(2048)">
 				<constraints nullable="false" />
 			</column>
-			<column name="meeting_id" type="varchar(255)" />
-			<column name="meeting_provider" type="varchar(50)" />
 			<column name="status" type="varchar(20)" defaultValue="created">
 				<constraints nullable="false" />
 			</column>
 			<column name="expires_at" type="datetime">
 				<constraints nullable="false" />
 			</column>
+			<column name="creator" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="date_created" type="datetime">
+				<constraints nullable="false" />
+			</column>
+			<column name="changed_by" type="int" />
+			<column name="date_changed" type="datetime" />
 			<column name="voided" type="boolean" defaultValueBoolean="false">
 				<constraints nullable="false" />
 			</column>
-			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
-				<constraints nullable="false" />
-			</column>
-			<column name="updated_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
-				<constraints nullable="false" />
-			</column>
+			<column name="voided_by" type="int" />
+			<column name="date_voided" type="datetime" />
+			<column name="void_reason" type="varchar(255)" />
 		</createTable>
 
 		<addForeignKeyConstraint
-		    constraintName="fk_indiemr_teleconsult_link_account"
-		    baseTableName="indiemr_teleconsult_link"
-		    baseColumnNames="oauth_account_id"
-		    referencedTableName="indiemr_oauth_account"
+		    constraintName="fk_indiemr_meeting_external_event"
+		    baseTableName="indiemr_meeting"
+		    baseColumnNames="external_event_id"
+		    referencedTableName="indiemr_external_event"
 		    referencedColumnNames="id" />
 
 		<addForeignKeyConstraint
-		    constraintName="fk_indiemr_teleconsult_link_ext_mapping"
-		    baseTableName="indiemr_teleconsult_link"
-		    baseColumnNames="external_resource_mapping_id"
-		    referencedTableName="indiemr_external_resource_mapping"
-		    referencedColumnNames="id" />
+		    constraintName="fk_indiemr_meeting_creator"
+		    baseTableName="indiemr_meeting"
+		    baseColumnNames="creator"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_meeting_changed_by"
+		    baseTableName="indiemr_meeting"
+		    baseColumnNames="changed_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_meeting_voided_by"
+		    baseTableName="indiemr_meeting"
+		    baseColumnNames="voided_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<createIndex indexName="idx_indiemr_meeting_external_event" tableName="indiemr_meeting">
+			<column name="external_event_id" />
+		</createIndex>
 	</changeSet>
 
 	<changeSet id="indiemroauthprovider-2026-07-02-007" author="indiemr">

@@ -27,13 +27,18 @@
 		<property name="sessionFactory" ref="dbSessionFactory" />
 	</bean>
 
-	<bean id="indiemroauthprovider.ExternalResourceMappingDao"
-	      class="org.openmrs.module.indiemroauthprovider.dao.impl.ExternalResourceMappingDaoImpl">
+	<bean id="indiemroauthprovider.ExternalEventDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.ExternalEventDaoImpl">
 		<property name="sessionFactory" ref="dbSessionFactory" />
 	</bean>
 
-	<bean id="indiemroauthprovider.TeleconsultLinkDao"
-	      class="org.openmrs.module.indiemroauthprovider.dao.impl.TeleconsultLinkDaoImpl">
+	<bean id="indiemroauthprovider.ResourceEventMappingDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.ResourceEventMappingDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.MeetingDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.MeetingDaoImpl">
 		<property name="sessionFactory" ref="dbSessionFactory" />
 	</bean>
 
@@ -59,10 +64,11 @@
 		<property name="transactionAttributeSource" ref="transactionAttributeSource" />
 		<property name="target">
 			<bean class="org.openmrs.module.indiemroauthprovider.api.impl.ExternalResourceServiceImpl">
-				<property name="mappingDao" ref="indiemroauthprovider.ExternalResourceMappingDao" />
+				<property name="mappingDao" ref="indiemroauthprovider.ResourceEventMappingDao" />
+				<property name="externalEventDao" ref="indiemroauthprovider.ExternalEventDao" />
 				<property name="calendarRegistry" ref="indiemroauthprovider.CalendarProviderRegistry" />
 				<property name="meetingRegistry" ref="indiemroauthprovider.MeetingProviderRegistry" />
-				<property name="teleconsultLinkDao" ref="indiemroauthprovider.TeleconsultLinkDao" />
+				<property name="meetingDao" ref="indiemroauthprovider.MeetingDao" />
 				<property name="crypto" ref="indiemroauthprovider.CryptoService" />
 			</bean>
 		</property>
@@ -77,8 +83,9 @@
 			<bean class="org.openmrs.module.indiemroauthprovider.api.impl.TeleconsultServiceImpl">
 				<property name="meetingRegistry" ref="indiemroauthprovider.MeetingProviderRegistry" />
 				<property name="oauthAccountDao" ref="indiemroauthprovider.OAuthAccountDao" />
-				<property name="externalResourceMappingDao" ref="indiemroauthprovider.ExternalResourceMappingDao" />
-				<property name="teleconsultLinkDao" ref="indiemroauthprovider.TeleconsultLinkDao" />
+				<property name="externalEventDao" ref="indiemroauthprovider.ExternalEventDao" />
+				<property name="resourceEventMappingDao" ref="indiemroauthprovider.ResourceEventMappingDao" />
+				<property name="meetingDao" ref="indiemroauthprovider.MeetingDao" />
 				<property name="crypto" ref="indiemroauthprovider.CryptoService" />
 				<property name="moduleConfigLoader" ref="indiemroauthprovider.ModuleConfigLoader" />
 				<property name="calendarRegistry" ref="indiemroauthprovider.CalendarProviderRegistry" />
