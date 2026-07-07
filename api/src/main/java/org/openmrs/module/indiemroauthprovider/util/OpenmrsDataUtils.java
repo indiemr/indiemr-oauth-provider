@@ -1,6 +1,7 @@
 package org.openmrs.module.indiemroauthprovider.util;
 
 import java.util.Date;
+import java.util.UUID;
 
 import org.openmrs.BaseChangeableOpenmrsData;
 import org.openmrs.OpenmrsData;
@@ -13,6 +14,9 @@ public final class OpenmrsDataUtils {
 	}
 	
 	public static void setCreated(OpenmrsData data) {
+		if (data.getUuid() == null) {
+			data.setUuid(UUID.randomUUID().toString());
+		}
 		if (data.getCreator() == null) {
 			data.setCreator(getAuthenticatedUser());
 		}

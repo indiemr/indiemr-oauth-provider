@@ -155,6 +155,9 @@
 			<column name="id" type="bigint" autoIncrement="true">
 				<constraints nullable="false" primaryKey="true" />
 			</column>
+			<column name="uuid" type="char(38)">
+				<constraints nullable="false" unique="true" />
+			</column>
 			<column name="oauth_account_id" type="bigint">
 				<constraints nullable="false" />
 			</column>
@@ -220,6 +223,9 @@
 			<column name="id" type="bigint" autoIncrement="true">
 				<constraints primaryKey="true" nullable="false" />
 			</column>
+			<column name="uuid" type="char(38)">
+				<constraints nullable="false" unique="true" />
+			</column>
 			<column name="external_event_id" type="bigint">
 				<constraints nullable="false" />
 			</column>
@@ -238,6 +244,8 @@
 			<column name="voided" type="boolean" defaultValueBoolean="false">
 				<constraints nullable="false" />
 			</column>
+			<column name="changed_by" type="int" />
+			<column name="date_changed" type="datetime" />
 			<column name="voided_by" type="int" />
 			<column name="date_voided" type="datetime" />
 			<column name="void_reason" type="varchar(255)" />
@@ -263,6 +271,13 @@
 		    baseColumnNames="voided_by"
 		    referencedTableName="users"
 		    referencedColumnNames="user_id" />
+		
+		<addForeignKeyConstraint
+			constraintName="fk_indiemr_res_event_mapping_changed_by"
+			baseTableName="indiemr_resource_event_mapping"
+			baseColumnNames="changed_by"
+			referencedTableName="users"
+			referencedColumnNames="user_id" />
 
 		<createIndex indexName="idx_indiemr_res_event_internal" tableName="indiemr_resource_event_mapping">
 			<column name="internal_resource_type" />
@@ -275,6 +290,9 @@
 		<createTable tableName="indiemr_meeting">
 			<column name="id" type="bigint" autoIncrement="true">
 				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="uuid" type="char(38)">
+				<constraints nullable="false" unique="true" />
 			</column>
 			<column name="external_event_id" type="bigint">
 				<constraints nullable="false" />
