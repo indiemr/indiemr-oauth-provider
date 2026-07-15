@@ -8,54 +8,72 @@ import org.openmrs.Provider;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.indiemroauthprovider.api.ExternalResourceService;
 import org.openmrs.module.indiemroauthprovider.crypto.CryptoService;
-import org.openmrs.module.indiemroauthprovider.dao.ExternalResourceMappingDao;
-import org.openmrs.module.indiemroauthprovider.dao.TeleconsultLinkDao;
-import org.openmrs.module.indiemroauthprovider.model.ExternalResourceMapping;
+import org.openmrs.module.indiemroauthprovider.dao.ExternalEventDao;
+import org.openmrs.module.indiemroauthprovider.dao.MeetingDao;
+import org.openmrs.module.indiemroauthprovider.dao.ResourceEventMappingDao;
+import org.openmrs.module.indiemroauthprovider.model.ExternalEvent;
 import org.openmrs.module.indiemroauthprovider.model.ExternalResourceType;
 import org.openmrs.module.indiemroauthprovider.model.InternalResourceType;
 import org.openmrs.module.indiemroauthprovider.model.OAuthAccount;
+import org.openmrs.module.indiemroauthprovider.model.ResourceEventMapping;
 import org.openmrs.module.indiemroauthprovider.provider.registry.CalendarProviderRegistry;
 import org.openmrs.module.indiemroauthprovider.provider.registry.MeetingProviderRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-@Service("indiemroauthprovider.ExternalResourceService")
-@Transactional
 public class ExternalResourceServiceImpl extends BaseOpenmrsService implements ExternalResourceService {
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.ExternalResourceMappingDao")
-	private ExternalResourceMappingDao mappingDao;
+	private static final String VOID_REASON = "External resource cancelled";
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CalendarProviderRegistry")
+	private ResourceEventMappingDao mappingDao;
+	
+	private ExternalEventDao externalEventDao;
+	
 	private CalendarProviderRegistry calendarRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.MeetingProviderRegistry")
 	private MeetingProviderRegistry meetingRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.TeleconsultLinkDao")
-	private TeleconsultLinkDao teleconsultLinkDao;
+	private MeetingDao meetingDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CryptoService")
 	private CryptoService crypto;
+	
+	public void setMappingDao(ResourceEventMappingDao mappingDao) {
+		this.mappingDao = mappingDao;
+	}
+	
+	public void setExternalEventDao(ExternalEventDao externalEventDao) {
+		this.externalEventDao = externalEventDao;
+	}
+	
+	public void setCalendarRegistry(CalendarProviderRegistry calendarRegistry) {
+		this.calendarRegistry = calendarRegistry;
+	}
+	
+	public void setMeetingRegistry(MeetingProviderRegistry meetingRegistry) {
+		this.meetingRegistry = meetingRegistry;
+	}
+	
+	public void setMeetingDao(MeetingDao meetingDao) {
+		this.meetingDao = meetingDao;
+	}
+	
+	public void setCrypto(CryptoService crypto) {
+		this.crypto = crypto;
+	}
 	
 	@Override
 	public void voidInternalResources(InternalResourceType resourceType, String resourceUuid) throws Exception {
-		List<ExternalResourceMapping> mappings = mappingDao.findByInternalResource(resourceType.getCode(), resourceUuid);
-		deleteExternalResources(mappings);
-		mappingDao.voidByInternalResource(resourceType.getCode(), resourceUuid);
-		voidActiveTeleconsultLinks(mappings);
+		voidInternalResourcesByType(resourceType.getCode(), resourceUuid);
 	}
 	
 	@Override
 	public void cancelAppointmentResources(String appointmentUuid) throws Exception {
-		voidInternalResources(InternalResourceType.APPOINTMENT, appointmentUuid);
+		voidInternalResourcesByType(InternalResourceType.APPOINTMENT.getCode(), appointmentUuid);
+	}
+	
+	private void voidInternalResourcesByType(String resourceType, String resourceUuid) throws Exception {
+		List<ResourceEventMapping> mappings = mappingDao.findByInternalResource(resourceType, resourceUuid);
+		deleteExternalResources(mappings);
+		mappingDao.voidByInternalResource(resourceType, resourceUuid, VOID_REASON);
+		voidEventsAndMeetings(mappings);
 	}
 	
 	@Override
@@ -70,41 +88,48 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 		if (provider == null) {
 			throw new IllegalArgumentException("provider is required");
 		}
-		List<ExternalResourceMapping> mappings = mappingDao.findByProviderAndInternalResource(provider.getUuid(),
+		List<ResourceEventMapping> mappings = mappingDao.findByProviderAndInternalResource(provider.getUuid(),
 		    internalResourceType, internalResourceUuid);
 		if (mappings == null || mappings.isEmpty()) {
 			throw new IllegalStateException("No external resources found for " + internalResourceType + ":"
 			        + internalResourceUuid);
 		}
 		deleteExternalResources(mappings);
-		mappingDao.voidByProviderAndInternalResource(provider.getUuid(), internalResourceType, internalResourceUuid);
-		voidActiveTeleconsultLinks(mappings);
+		mappingDao.voidByProviderAndInternalResource(provider.getUuid(), internalResourceType, internalResourceUuid,
+		    VOID_REASON);
+		voidEventsAndMeetings(mappings);
 	}
 	
-	private void deleteExternalResources(List<ExternalResourceMapping> mappings) throws Exception {
-		Set<String> deletedExternalIds = new HashSet<String>();
+	private void deleteExternalResources(List<ResourceEventMapping> mappings) throws Exception {
+		Set<Integer> deletedEventIds = new HashSet<Integer>();
 		
-		for (ExternalResourceMapping mapping : mappings) {
-			String externalId = mapping.getExternalResourceId();
-			if (!deletedExternalIds.add(externalId)) {
+		for (ResourceEventMapping mapping : mappings) {
+			ExternalEvent event = mapping.getExternalEvent();
+			if (!deletedEventIds.add(event.getId())) {
 				continue;
 			}
-			OAuthAccount account = mapping.getOauthAccount();
+			OAuthAccount account = event.getOauthAccount();
 			String providerCode = account.getOauthProvider().getCode();
 			String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
 			
-			if (ExternalResourceType.CALENDAR_EVENT.getCode().equals(mapping.getExternalResourceType())) {
-				calendarRegistry.require(providerCode).deleteEvent(account, refreshToken, mapping.getExternalResourceId());
-			} else if (ExternalResourceType.VIDEO_MEETING.getCode().equals(mapping.getExternalResourceType())) {
-				meetingRegistry.require(providerCode).deleteMeeting(account, refreshToken, mapping.getExternalResourceId());
+			if (ExternalResourceType.CALENDAR_EVENT.getCode().equals(event.getExternalResourceType())) {
+				calendarRegistry.require(providerCode).deleteEvent(account, refreshToken, event.getExternalEventId());
+			} else if (ExternalResourceType.VIDEO_MEETING.getCode().equals(event.getExternalResourceType())) {
+				meetingRegistry.require(providerCode).deleteMeeting(account, refreshToken, event.getExternalEventId());
 			}
 		}
 	}
 	
-	private void voidActiveTeleconsultLinks(List<ExternalResourceMapping> mappings) {
-		for (ExternalResourceMapping mapping : mappings) {
-			if (ExternalResourceMapping.EXTERNAL_VIDEO_MEETING.equals(mapping.getExternalResourceType())) {
-				teleconsultLinkDao.voidActiveByExternalResourceMappingId(mapping.getId());
+	private void voidEventsAndMeetings(List<ResourceEventMapping> mappings) {
+		Set<Integer> processedEventIds = new HashSet<Integer>();
+		for (ResourceEventMapping mapping : mappings) {
+			ExternalEvent event = mapping.getExternalEvent();
+			if (!processedEventIds.add(event.getId())) {
+				continue;
+			}
+			externalEventDao.voidEvent(event, VOID_REASON);
+			if (ExternalResourceType.VIDEO_MEETING.getCode().equals(event.getExternalResourceType())) {
+				meetingDao.voidActiveByExternalEventId(event.getId(), VOID_REASON);
 			}
 		}
 	}

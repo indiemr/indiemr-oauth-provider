@@ -13,7 +13,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
+import org.openmrs.module.indiemroauthprovider.util.ModuleConfigLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -28,15 +28,15 @@ public class CryptoService {
 	private static final int IV_BYTES = 12;
 	
 	@Autowired
-	@Qualifier("indiemroauthprovider.ModuleConfig")
-	private ModuleConfig moduleConfig;
+	@Qualifier("indiemroauthprovider.ModuleConfigLoader")
+	private ModuleConfigLoader moduleConfigLoader;
 	
 	private final ObjectMapper mapper = new ObjectMapper();
 	
 	private final SecureRandom random = new SecureRandom();
 	
 	private byte[] key() throws Exception {
-		String secret = moduleConfig.getEncKey();
+		String secret = moduleConfigLoader.getEncKey();
 		if (secret == null || secret.trim().isEmpty()) {
 			throw new IllegalStateException("INDIEMR_OAUTH_ENC_KEY is not set (env or application.yml)");
 		}
@@ -110,7 +110,7 @@ public class CryptoService {
 	
 	private String hmac(String body) throws Exception {
 		Mac mac = Mac.getInstance("HmacSHA256");
-		mac.init(new SecretKeySpec(moduleConfig.getEncKey().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+		mac.init(new SecretKeySpec(moduleConfigLoader.getEncKey().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
 		return b64url(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
 	}
 	

@@ -8,11 +8,95 @@
            http://www.springframework.org/schema/context
            http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<context:component-scan base-package="org.openmrs.module.indiemroauthprovider" />
+	<context:component-scan base-package="org.openmrs.module.indiemroauthprovider.provider" />
+	<context:component-scan base-package="org.openmrs.module.indiemroauthprovider.crypto" />
+	<context:component-scan base-package="org.openmrs.module.indiemroauthprovider.util" />
+
+	<bean id="indiemroauthprovider.OAuthAccountDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.OAuthAccountDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.OAuthProviderDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.OAuthProviderDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.OAuthCapabilityDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.OAuthCapabilityDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.ExternalEventDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.ExternalEventDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.ResourceEventMappingDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.ResourceEventMappingDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.MeetingDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.MeetingDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.OAuthConnectService"
+	      class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="preInterceptors" ref="serviceInterceptors" />
+		<property name="transactionAttributeSource" ref="transactionAttributeSource" />
+		<property name="target">
+			<bean class="org.openmrs.module.indiemroauthprovider.api.impl.OAuthConnectServiceImpl">
+				<property name="oauthRegistry" ref="indiemroauthprovider.OAuthProviderRegistry" />
+				<property name="oauthProviderDao" ref="indiemroauthprovider.OAuthProviderDao" />
+				<property name="oauthAccountDao" ref="indiemroauthprovider.OAuthAccountDao" />
+				<property name="crypto" ref="indiemroauthprovider.CryptoService" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="indiemroauthprovider.ExternalResourceService"
+	      class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="preInterceptors" ref="serviceInterceptors" />
+		<property name="transactionAttributeSource" ref="transactionAttributeSource" />
+		<property name="target">
+			<bean class="org.openmrs.module.indiemroauthprovider.api.impl.ExternalResourceServiceImpl">
+				<property name="mappingDao" ref="indiemroauthprovider.ResourceEventMappingDao" />
+				<property name="externalEventDao" ref="indiemroauthprovider.ExternalEventDao" />
+				<property name="calendarRegistry" ref="indiemroauthprovider.CalendarProviderRegistry" />
+				<property name="meetingRegistry" ref="indiemroauthprovider.MeetingProviderRegistry" />
+				<property name="meetingDao" ref="indiemroauthprovider.MeetingDao" />
+				<property name="crypto" ref="indiemroauthprovider.CryptoService" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="indiemroauthprovider.TeleconsultService"
+	      class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="preInterceptors" ref="serviceInterceptors" />
+		<property name="transactionAttributeSource" ref="transactionAttributeSource" />
+		<property name="target">
+			<bean class="org.openmrs.module.indiemroauthprovider.api.impl.TeleconsultServiceImpl">
+				<property name="meetingRegistry" ref="indiemroauthprovider.MeetingProviderRegistry" />
+				<property name="oauthAccountDao" ref="indiemroauthprovider.OAuthAccountDao" />
+				<property name="externalEventDao" ref="indiemroauthprovider.ExternalEventDao" />
+				<property name="resourceEventMappingDao" ref="indiemroauthprovider.ResourceEventMappingDao" />
+				<property name="meetingDao" ref="indiemroauthprovider.MeetingDao" />
+				<property name="crypto" ref="indiemroauthprovider.CryptoService" />
+				<property name="moduleConfigLoader" ref="indiemroauthprovider.ModuleConfigLoader" />
+				<property name="calendarRegistry" ref="indiemroauthprovider.CalendarProviderRegistry" />
+				<property name="externalResourceService" ref="indiemroauthprovider.ExternalResourceService" />
+			</bean>
+		</property>
+	</bean>
 
 	<bean parent="serviceContext">
 		<property name="moduleService">
-			<list>
+			<list merge="true">
 				<value>org.openmrs.module.indiemroauthprovider.api.OAuthConnectService</value>
 				<ref bean="indiemroauthprovider.OAuthConnectService" />
 			</list>
@@ -21,18 +105,18 @@
 
 	<bean parent="serviceContext">
 		<property name="moduleService">
-			<list>
-				<value>org.openmrs.module.indiemroauthprovider.api.TeleconsultService</value>
-				<ref bean="indiemroauthprovider.TeleconsultService" />
+			<list merge="true">
+				<value>org.openmrs.module.indiemroauthprovider.api.ExternalResourceService</value>
+				<ref bean="indiemroauthprovider.ExternalResourceService" />
 			</list>
 		</property>
 	</bean>
 
 	<bean parent="serviceContext">
 		<property name="moduleService">
-			<list>
-				<value>org.openmrs.module.indiemroauthprovider.api.ExternalResourceService</value>
-				<ref bean="indiemroauthprovider.ExternalResourceService" />
+			<list merge="true">
+				<value>org.openmrs.module.indiemroauthprovider.api.TeleconsultService</value>
+				<ref bean="indiemroauthprovider.TeleconsultService" />
 			</list>
 		</property>
 	</bean>

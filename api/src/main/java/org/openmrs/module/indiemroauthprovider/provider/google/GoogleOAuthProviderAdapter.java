@@ -10,7 +10,7 @@ import org.openmrs.module.indiemroauthprovider.provider.OAuthProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.dto.OAuthToken;
 import org.openmrs.module.indiemroauthprovider.provider.dto.OAuthUser;
 import org.openmrs.module.indiemroauthprovider.model.OAuthVendorCode;
-import org.openmrs.module.indiemroauthprovider.util.ModuleConfig;
+import org.openmrs.module.indiemroauthprovider.util.ModuleConfigLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -31,8 +31,8 @@ public class GoogleOAuthProviderAdapter implements OAuthProviderAdapter {
 	    "https://www.googleapis.com/auth/calendar.events");
 	
 	@Autowired
-	@Qualifier("indiemroauthprovider.ModuleConfig")
-	private ModuleConfig moduleConfig;
+	@Qualifier("indiemroauthprovider.ModuleConfigLoader")
+	private ModuleConfigLoader moduleConfigLoader;
 	
 	@Override
 	public String getProviderCode() {
@@ -41,12 +41,14 @@ public class GoogleOAuthProviderAdapter implements OAuthProviderAdapter {
 	
 	@Override
 	public String buildAuthorizationUrl(String state) throws Exception {
-		return flow().newAuthorizationUrl().setRedirectUri(moduleConfig.getGoogleRedirectUri()).setState(state).build();
+		return flow().newAuthorizationUrl().setRedirectUri(moduleConfigLoader.getGoogleRedirectUri()).setState(state)
+		        .build();
 	}
 	
 	@Override
 	public OAuthToken exchangeAuthorizationCode(String code) throws Exception {
-		TokenResponse response = flow().newTokenRequest(code).setRedirectUri(moduleConfig.getGoogleRedirectUri()).execute();
+		TokenResponse response = flow().newTokenRequest(code).setRedirectUri(moduleConfigLoader.getGoogleRedirectUri())
+		        .execute();
 		if (response.getRefreshToken() == null) {
 			throw new IllegalStateException("Google did not return a refresh token — revoke prior access and reconnect.");
 		}
@@ -68,8 +70,8 @@ public class GoogleOAuthProviderAdapter implements OAuthProviderAdapter {
 	
 	private GoogleAuthorizationCodeFlow flow() throws Exception {
 		GoogleClientSecrets.Details web = new GoogleClientSecrets.Details();
-		web.setClientId(moduleConfig.getGoogleClientId());
-		web.setClientSecret(moduleConfig.getGoogleClientSecret());
+		web.setClientId(moduleConfigLoader.getGoogleClientId());
+		web.setClientSecret(moduleConfigLoader.getGoogleClientSecret());
 		return new GoogleAuthorizationCodeFlow.Builder(GoogleNetHttpTransport.newTrustedTransport(),
 		        GsonFactory.getDefaultInstance(), new GoogleClientSecrets().setWeb(web), SCOPES).setAccessType("offline")
 		        .setApprovalPrompt("force").build();

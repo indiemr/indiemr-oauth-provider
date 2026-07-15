@@ -6,11 +6,13 @@ import java.io.InputStream;
 import java.util.Map;
 
 import org.openmrs.util.OpenmrsUtil;
+import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 
 /**
  * Loads module settings from an application.yml file, with environment-variable overrides.
  */
+@Component("indiemroauthprovider.ModuleConfigLoader")
 public class ModuleConfigLoader {
 	
 	private final Map<String, Object> config;

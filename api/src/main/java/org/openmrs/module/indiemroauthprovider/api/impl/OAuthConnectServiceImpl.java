@@ -23,37 +23,40 @@ import org.openmrs.module.indiemroauthprovider.provider.OAuthProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.dto.OAuthToken;
 import org.openmrs.module.indiemroauthprovider.provider.google.GoogleOAuthProviderAdapter;
 import org.openmrs.module.indiemroauthprovider.provider.registry.OAuthProviderRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-@Service("indiemroauthprovider.OAuthConnectService")
-@Transactional
 public class OAuthConnectServiceImpl extends BaseOpenmrsService implements OAuthConnectService {
 	
 	private static final List<OAuthCapabilityCode> GOOGLE_CAPABILITIES = Arrays.asList(OAuthCapabilityCode.CALENDAR,
 	    OAuthCapabilityCode.VIDEO_MEETING, OAuthCapabilityCode.EMAIL);
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.OAuthProviderRegistry")
 	private OAuthProviderRegistry oauthRegistry;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.OAuthProviderDao")
 	private OAuthProviderDao oauthProviderDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.OAuthAccountDao")
 	private OAuthAccountDao oauthAccountDao;
 	
-	@Autowired
-	@Qualifier("indiemroauthprovider.CryptoService")
 	private CryptoService crypto;
 	
+	public void setOauthRegistry(OAuthProviderRegistry oauthRegistry) {
+		this.oauthRegistry = oauthRegistry;
+	}
+	
+	public void setOauthProviderDao(OAuthProviderDao oauthProviderDao) {
+		this.oauthProviderDao = oauthProviderDao;
+	}
+	
+	public void setOauthAccountDao(OAuthAccountDao oauthAccountDao) {
+		this.oauthAccountDao = oauthAccountDao;
+	}
+	
+	public void setCrypto(CryptoService crypto) {
+		this.crypto = crypto;
+	}
+	
 	@Override
-	public String buildConnectUrl(Provider provider, String providerDisplay, OAuthVendorCode oauthVendor) throws Exception {
+	public String buildConnectUrl(Provider provider, OAuthVendorCode oauthVendor) throws Exception {
 		String vendorCode = oauthVendor.getCode();
+		String providerDisplay = provider.getName();
 		if (oauthProviderDao.findEnabledByCode(vendorCode) == null) {
 			throw new IllegalArgumentException("Provider not enabled: " + vendorCode);
 		}

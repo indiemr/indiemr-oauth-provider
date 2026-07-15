@@ -1,5 +1,6 @@
 package org.openmrs.module.indiemroauthprovider.web.controller;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,9 +8,11 @@ import org.openmrs.Provider;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.indiemroauthprovider.api.OAuthConnectService;
 import org.openmrs.module.indiemroauthprovider.dto.AccountStatusResponse;
-import org.openmrs.module.indiemroauthprovider.dto.ConnectResult;
 import org.openmrs.module.indiemroauthprovider.model.OAuthVendorCode;
+import org.openmrs.module.indiemroauthprovider.util.AuthenticatedProviderResolver;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.openmrs.module.webservices.rest.web.RestUtil;
+import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,39 +23,29 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/oauth")
-public class OAuthController extends BaseTeleconsultController {
+public class OAuthController extends BaseRestController {
 	
-	@RequestMapping(value = "/connect-url", method = RequestMethod.GET)
+	@RequestMapping(value = "/connect", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> connectUrl(@RequestParam(value = "providerDisplay", required = false) String providerDisplay,
-	        @RequestParam(value = "oauthProvider", defaultValue = "GOOGLE") String oauthProvider) {
-		ResponseEntity<Map<String, Object>> authError = requireAuthenticatedProvider();
-		if (authError != null) {
-			return authError;
-		}
+	public ResponseEntity<?> connectUrl(@RequestParam(value = "oauthProvider", defaultValue = "GOOGLE") String oauthProvider) {
 		try {
-			Provider provider = getAuthenticatedProvider();
-			String display = providerDisplay != null ? providerDisplay : provider.getName();
+			Provider provider = AuthenticatedProviderResolver.requireAuthenticatedProvider();
 			OAuthConnectService service = Context.getService(OAuthConnectService.class);
 			Map<String, String> result = new HashMap<String, String>();
-			result.put("url", service.buildConnectUrl(provider, display, OAuthVendorCode.fromCode(oauthProvider)));
+			result.put("url", service.buildConnectUrl(provider, OAuthVendorCode.fromCode(oauthProvider)));
 			return new ResponseEntity<Map<String, String>>(result, HttpStatus.OK);
 		}
 		catch (Exception e) {
-			return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+			return new ResponseEntity<Object>(RestUtil.wrapErrorResponse(e, e.getMessage()), HttpStatus.BAD_REQUEST);
 		}
 	}
 	
 	@RequestMapping(value = "/check-token", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> checkToken(@RequestParam(value = "oauthProvider", defaultValue = "GOOGLE") String oauthProvider) {
-		ResponseEntity<Map<String, Object>> authError = requireAuthenticatedProvider();
-		if (authError != null) {
-			return authError;
-		}
 		OAuthConnectService service = Context.getService(OAuthConnectService.class);
-		AccountStatusResponse status = service.getAccountStatus(getAuthenticatedProvider(),
-		    OAuthVendorCode.fromCode(oauthProvider));
+		Provider provider = AuthenticatedProviderResolver.requireAuthenticatedProvider();
+		AccountStatusResponse status = service.getAccountStatus(provider, OAuthVendorCode.fromCode(oauthProvider));
 		if (status != null) {
 			return new ResponseEntity<AccountStatusResponse>(status, HttpStatus.OK);
 		}
@@ -70,10 +63,9 @@ public class OAuthController extends BaseTeleconsultController {
 		}
 		try {
 			OAuthConnectService service = Context.getService(OAuthConnectService.class);
-			ConnectResult result = service.handleCallback(code, state);
-			String email = result.getEmail() != null ? result.getEmail() : "your account";
-			return new ResponseEntity<String>("Connected " + result.getOauthProviderCode() + " for " + email
-			        + ". You can close this tab.", HttpStatus.OK);
+			service.handleCallback(code, state);
+			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("https://localhost:3000/admin/integrations"))
+			        .build();
 		}
 		catch (Exception e) {
 			return new ResponseEntity<String>("Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
