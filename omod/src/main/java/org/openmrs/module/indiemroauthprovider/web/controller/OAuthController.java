@@ -4,12 +4,15 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.Provider;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.indiemroauthprovider.api.OAuthConnectService;
 import org.openmrs.module.indiemroauthprovider.dto.AccountStatusResponse;
 import org.openmrs.module.indiemroauthprovider.model.OAuthVendorCode;
 import org.openmrs.module.indiemroauthprovider.util.AuthenticatedProviderResolver;
+import org.openmrs.module.indiemroauthprovider.util.ModuleConfigLoader;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
@@ -24,6 +27,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/oauth")
 public class OAuthController extends BaseRestController {
+	
+	private final Log log = LogFactory.getLog(getClass());
 	
 	@RequestMapping(value = "/connect", method = RequestMethod.GET)
 	@ResponseBody
@@ -64,10 +69,13 @@ public class OAuthController extends BaseRestController {
 		try {
 			OAuthConnectService service = Context.getService(OAuthConnectService.class);
 			service.handleCallback(code, state);
-			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("https://localhost:3000/admin/integrations"))
-			        .build();
+			ModuleConfigLoader config = Context.getRegisteredComponent("indiemroauthprovider.ModuleConfigLoader",
+			    ModuleConfigLoader.class);
+			String baseUrl = config.getPublicBaseUrl().replaceAll("/+$", "");
+			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(baseUrl + "/admin/integrations")).build();
 		}
 		catch (Exception e) {
+			log.error("OAuth callback failed", e);
 			return new ResponseEntity<String>("Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
