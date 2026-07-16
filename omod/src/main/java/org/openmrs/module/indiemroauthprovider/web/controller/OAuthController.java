@@ -10,9 +10,12 @@ import org.openmrs.module.indiemroauthprovider.api.OAuthConnectService;
 import org.openmrs.module.indiemroauthprovider.dto.AccountStatusResponse;
 import org.openmrs.module.indiemroauthprovider.model.OAuthVendorCode;
 import org.openmrs.module.indiemroauthprovider.util.AuthenticatedProviderResolver;
+import org.openmrs.module.indiemroauthprovider.util.ModuleConfigLoader;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -24,6 +27,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/oauth")
 public class OAuthController extends BaseRestController {
+
+	@Autowired
+	@Qualifier("indiemroauthprovider.ModuleConfigLoader")
+	private ModuleConfigLoader moduleConfigLoader;
 	
 	@RequestMapping(value = "/connect", method = RequestMethod.GET)
 	@ResponseBody
@@ -64,7 +71,8 @@ public class OAuthController extends BaseRestController {
 		try {
 			OAuthConnectService service = Context.getService(OAuthConnectService.class);
 			service.handleCallback(code, state);
-			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("https://localhost:3000/admin/integrations"))
+			String redirectUrl = moduleConfigLoader.getPublicBaseUrl() + "/admin/integrations";
+			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl))
 			        .build();
 		}
 		catch (Exception e) {

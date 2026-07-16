@@ -299,6 +299,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		return meeting;
 	}
 	
+	// TODO: depreciate these. Not needed
 	private String buildResolverUrl(String token) {
 		return moduleConfigLoader.getPublicBaseUrl() + "/openmrs/ws/rest/v1/teleconsult/link/" + token;
 	}
