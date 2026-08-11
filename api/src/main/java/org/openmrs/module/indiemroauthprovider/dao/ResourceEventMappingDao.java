@@ -16,6 +16,9 @@ public interface ResourceEventMappingDao {
 	
 	ExternalEvent findActiveEventByProviderAndInternalResource(String providerUuid, String internalResourceType,
 	        String internalResourceUuid, String externalResourceType);
+
+	ExternalEvent findActiveEventByProviderAndInternalResource(String providerUuid, String oauthProviderCode,
+		String internalResourceType, String internalResourceUuid, String externalResourceType);
 	
 	void voidByInternalResource(String internalResourceType, String internalResourceUuid, String reason);
 	
