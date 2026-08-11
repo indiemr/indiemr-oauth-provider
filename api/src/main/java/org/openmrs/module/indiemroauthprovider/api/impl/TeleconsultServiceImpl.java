@@ -199,6 +199,20 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		
 	}
 	
+	@Override
+	public ExternalEvent findActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType,
+			String resourceUuid) {
+		String code = oauthProviderCode != null ? oauthProviderCode : "GOOGLE";
+		return resourceEventMappingDao.findActiveEventByProviderAndInternalResource(provider.getUuid(), code, resourceType,
+			resourceUuid, ExternalResourceType.CALENDAR_EVENT.getCode());
+	}
+
+	@Override
+	public boolean hasActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType,
+			String resourceUuid) {
+		return findActiveCalendarEvent(provider, oauthProviderCode, resourceType, resourceUuid) != null;
+	}
+
 	private void validateCancelRequest(CancelCalendarEventRequest request) {
 		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
 			throw new IllegalArgumentException("resourceType is required");
