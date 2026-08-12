@@ -101,13 +101,22 @@ public class ExternalResourceServiceImpl extends BaseOpenmrsService implements E
 	}
 	
 	private void deleteExternalResources(List<ResourceEventMapping> mappings) throws Exception {
-		Set<Integer> deletedEventIds = new HashSet<Integer>();
+		Set<Integer> deletedEventPks = new HashSet<Integer>();
+		Set<String> deletedGoogleIds = new HashSet<String>();
 		
 		for (ResourceEventMapping mapping : mappings) {
 			ExternalEvent event = mapping.getExternalEvent();
-			if (!deletedEventIds.add(event.getId())) {
+			if (!deletedEventPks.add(event.getId())) {
 				continue;
 			}
+			
+			String googleId = event.getExternalEventId();
+			
+			// Same Google resource shared by CALENDAR EVENT + VIDEO_MEETING
+			if (googleId != null && !deletedGoogleIds.add(googleId)) {
+				continue;
+			}
+			
 			OAuthAccount account = event.getOauthAccount();
 			String providerCode = account.getOauthProvider().getCode();
 			String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
