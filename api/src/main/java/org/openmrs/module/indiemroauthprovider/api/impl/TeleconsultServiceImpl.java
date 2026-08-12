@@ -166,6 +166,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		}
 		
 		String refreshToken = crypto.decrypt(account.getRefreshTokenEnc());
+		
 		CalendarEventUpdate update = toCalendarEventUpdate(request);
 		CalendarEventResult updated = calendarRegistry.require(oauthProviderCode).updateEvent(account, refreshToken,
 		    calendarEvent.getExternalEventId(), update);
@@ -173,7 +174,51 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		ExternalEvent meetEvent = resourceEventMappingDao.findActiveEventByProviderAndInternalResource(provider.getUuid(),
 		    request.getResourceType(), request.getResourceUuid(), ExternalResourceType.VIDEO_MEETING.getCode());
 		
-		if (request.getEnd() != null && meetEvent != null) {
+		CreateCalendarEventResponse response = new CreateCalendarEventResponse();
+		response.setResourceUuid(request.getResourceUuid());
+		response.setExternalEventId(updated.getExternalEventId());
+		response.setHtmlLink(updated.getHtmlLink());
+		
+		if (request.isCreateMeet()) {
+			String meetingUrl = updated.getMeetingUrl();
+			
+			if (meetEvent == null) {
+				if (meetingUrl == null) {
+					throw new IllegalStateException("Google did not return a Meet link");
+				}
+				// Same Google event id as calendar (matches createMeeting path)
+				meetEvent = saveEventAndMapping(account, request.getResourceType(), request.getResourceUuid(),
+				    ExternalResourceType.VIDEO_MEETING.getCode(), calendarEvent.getExternalEventId());
+				
+				if (request.isMintJoinLink()) {
+					Meeting link = mintMeeting(meetEvent, meetingUrl, request.getEnd());
+					response.setJoinToken(link.getToken());
+					response.setResolverUrl(buildResolverUrl(link.getToken()));
+				}
+				response.setMeetingUrl(meetingUrl);
+			} else {
+				Meeting existing = meetingDao.findActiveByExternalEventId(meetEvent.getId());
+				if (existing != null) {
+					response.setMeetingUrl(existing.getMeetingUrl());
+					if (request.getEnd() != null) {
+						meetingDao.extendExpiryByExternalEventId(meetEvent.getId(),
+						    addHours(request.getEnd(), (int) LINK_TTL_HOURS));
+					}
+					if (request.isMintJoinLink() && existing.getToken() != null) {
+						response.setJoinToken(existing.getToken());
+						response.setResolverUrl(buildResolverUrl(existing.getToken()));
+					}
+				} else if (meetingUrl != null) {
+					response.setMeetingUrl(meetingUrl);
+					if (request.isMintJoinLink()) {
+						Date endForLink = request.getEnd(); // see note below
+						Meeting link = mintMeeting(meetEvent, meetingUrl, endForLink);
+						response.setJoinToken(link.getToken());
+						response.setResolverUrl(buildResolverUrl(link.getToken()));
+					}
+				}
+			}
+		} else if (request.getEnd() != null && meetEvent != null) {
 			Meeting meeting = meetingDao.findActiveByExternalEventId(meetEvent.getId());
 			if (meeting != null) {
 				meetingDao
@@ -181,10 +226,6 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 			}
 		}
 		
-		CreateCalendarEventResponse response = new CreateCalendarEventResponse();
-		response.setResourceUuid(request.getResourceUuid());
-		response.setExternalEventId(updated.getExternalEventId());
-		response.setHtmlLink(updated.getHtmlLink());
 		return response;
 	}
 	
@@ -201,18 +242,18 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 	
 	@Override
 	public ExternalEvent findActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType,
-			String resourceUuid) {
+	        String resourceUuid) {
 		String code = oauthProviderCode != null ? oauthProviderCode : "GOOGLE";
 		return resourceEventMappingDao.findActiveEventByProviderAndInternalResource(provider.getUuid(), code, resourceType,
-			resourceUuid, ExternalResourceType.CALENDAR_EVENT.getCode());
+		    resourceUuid, ExternalResourceType.CALENDAR_EVENT.getCode());
 	}
-
+	
 	@Override
 	public boolean hasActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType,
-			String resourceUuid) {
+	        String resourceUuid) {
 		return findActiveCalendarEvent(provider, oauthProviderCode, resourceType, resourceUuid) != null;
 	}
-
+	
 	private void validateCancelRequest(CancelCalendarEventRequest request) {
 		if (request.getResourceType() == null || request.getResourceType().trim().isEmpty()) {
 			throw new IllegalArgumentException("resourceType is required");
@@ -271,9 +312,16 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 			throw new IllegalArgumentException("resourceUuid is required");
 		}
 		boolean hasUpdate = request.getTitle() != null || request.getDescription() != null || request.getStart() != null
-		        || request.getEnd() != null || request.getTimeZone() != null;
+		        || request.getEnd() != null || request.getTimeZone() != null || request.isCreateMeet();
 		if (!hasUpdate) {
-			throw new IllegalArgumentException("at least one of title, description, start, end, or timeZone is required");
+			throw new IllegalArgumentException(
+			        "at least one of title, description, start, end, timeZone, or createMeet is required");
+		}
+		if (request.isMintJoinLink() && !request.isCreateMeet()) {
+			throw new IllegalArgumentException("mintJoinLink requires createMeet=true");
+		}
+		if (request.isMintJoinLink() && request.getEnd() == null) {
+			throw new IllegalArgumentException("end is required when mintJoinLink=true");
 		}
 	}
 	
@@ -284,6 +332,7 @@ public class TeleconsultServiceImpl extends BaseOpenmrsService implements Teleco
 		update.setStart(request.getStart());
 		update.setEnd(request.getEnd());
 		update.setTimeZone(request.getTimeZone());
+		update.setCreateMeet(request.isCreateMeet());
 		return update;
 	}
 	

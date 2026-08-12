@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/oauth")
 public class OAuthController extends BaseRestController {
-
+	
 	@Autowired
 	@Qualifier("indiemroauthprovider.ModuleConfigLoader")
 	private ModuleConfigLoader moduleConfigLoader;
@@ -72,8 +72,7 @@ public class OAuthController extends BaseRestController {
 			OAuthConnectService service = Context.getService(OAuthConnectService.class);
 			service.handleCallback(code, state);
 			String redirectUrl = moduleConfigLoader.getPublicBaseUrl() + "/admin/integrations";
-			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl))
-			        .build();
+			return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(redirectUrl)).build();
 		}
 		catch (Exception e) {
 			return new ResponseEntity<String>("Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

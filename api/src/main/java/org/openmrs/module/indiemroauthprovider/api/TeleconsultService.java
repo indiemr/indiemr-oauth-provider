@@ -17,12 +17,13 @@ public interface TeleconsultService extends OpenmrsService {
 	
 	@Transactional(readOnly = true)
 	@Authorized({ PrivilegeConstants.VIEW_EVENTS, PrivilegeConstants.MANAGE_EVENTS })
-	ExternalEvent findActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType, String resourceUuid);
-
+	ExternalEvent findActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType,
+	        String resourceUuid);
+	
 	@Transactional(readOnly = true)
 	@Authorized({ PrivilegeConstants.VIEW_EVENTS, PrivilegeConstants.MANAGE_EVENTS })
 	boolean hasActiveCalendarEvent(Provider provider, String oauthProviderCode, String resourceType, String resourceUuid);
-
+	
 	@Transactional
 	@Authorized({ PrivilegeConstants.MANAGE_EVENTS })
 	CreateCalendarEventResponse createCalendarEvent(Provider provider, CreateCalendarEventRequest request) throws Exception;
