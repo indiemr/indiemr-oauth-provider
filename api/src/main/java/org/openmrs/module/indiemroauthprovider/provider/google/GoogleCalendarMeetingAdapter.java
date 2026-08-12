@@ -45,7 +45,7 @@ public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, Me
 	public CalendarEventResult createEvent(OAuthAccount account, String decryptedRefreshToken, CalendarEventRequest request)
 	        throws Exception {
 		Event createdEvent = insertEvent(decryptedRefreshToken, request, false);
-		return new CalendarEventResult(createdEvent.getId(), createdEvent.getHtmlLink());
+		return new CalendarEventResult(createdEvent.getId(), createdEvent.getHtmlLink(), null);
 	}
 	
 	@Override
@@ -100,8 +100,20 @@ public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, Me
 			event.setEnd(end);
 		}
 		
-		Event updated = client.events().patch("primary", externalEventId, event).execute();
-		return new CalendarEventResult(updated.getId(), updated.getHtmlLink());
+		boolean addMeet = update.isCreateMeet() && !hasConference(event);
+		if (addMeet) {
+			event.setConferenceData(new ConferenceData().setCreateRequest(new CreateConferenceRequest().setRequestId(
+			    "indiemr-" + System.currentTimeMillis()).setConferenceSolutionKey(
+			    new ConferenceSolutionKey().setType("hangoutsMeet"))));
+		}
+		
+		Calendar.Events.Patch patch = client.events().patch("primary", externalEventId, event);
+		if (addMeet) {
+			patch.setConferenceDataVersion(1);
+		}
+		Event updated = patch.execute();
+		
+		return new CalendarEventResult(updated.getId(), updated.getHtmlLink(), extractMeetUrl(updated));
 	}
 	
 	@Override
@@ -143,5 +155,28 @@ public class GoogleCalendarMeetingAdapter implements CalendarProviderAdapter, Me
 		            new ClientParametersAuthentication(moduleConfigLoader.getGoogleClientId(), moduleConfigLoader
 		                    .getGoogleClientSecret())).build().setRefreshToken(refreshToken);
 		return new Calendar.Builder(transport, json, cred).setApplicationName("IndiEMR Teleconsult").build();
+	}
+	
+	private static boolean hasConference(Event event) {
+		return event.getHangoutLink() != null
+		        || (event.getConferenceData() != null && event.getConferenceData().getEntryPoints() != null && !event
+		                .getConferenceData().getEntryPoints().isEmpty());
+	}
+	
+	private static String extractMeetUrl(Event event) {
+		if (event.getHangoutLink() != null) {
+			return event.getHangoutLink();
+		}
+		
+		if (event.getConferenceData() == null || event.getConferenceData().getEntryPoints() == null) {
+			return null;
+		}
+		
+		for (EntryPoint entryPoint : event.getConferenceData().getEntryPoints()) {
+			if ("video".equals(entryPoint.getEntryPointType())) {
+				return entryPoint.getUri();
+			}
+		}
+		return null;
 	}
 }

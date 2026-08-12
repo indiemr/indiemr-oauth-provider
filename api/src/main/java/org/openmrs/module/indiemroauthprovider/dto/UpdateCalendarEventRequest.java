@@ -24,6 +24,26 @@ public class UpdateCalendarEventRequest {
 	
 	private String timeZone;
 	
+	private boolean createMeet;
+	
+	private boolean mintJoinLink;
+	
+	public boolean isCreateMeet() {
+		return createMeet;
+	}
+	
+	public void setCreateMeet(boolean createMeet) {
+		this.createMeet = createMeet;
+	}
+	
+	public boolean isMintJoinLink() {
+		return mintJoinLink;
+	}
+	
+	public void setMintJoinLink(boolean mintJoinLink) {
+		this.mintJoinLink = mintJoinLink;
+	}
+	
 	public String getOauthProviderCode() {
 		return oauthProviderCode;
 	}

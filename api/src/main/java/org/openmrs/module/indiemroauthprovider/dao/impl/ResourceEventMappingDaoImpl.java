@@ -63,25 +63,22 @@ public class ResourceEventMappingDaoImpl implements ResourceEventMappingDao {
 		}
 		return null;
 	}
-
+	
 	@Override
 	public ExternalEvent findActiveEventByProviderAndInternalResource(String providerUuid, String oauthProviderCode,
-			String internalResourceType, String internalResourceUuid, String externalResourceType) {
+	        String internalResourceType, String internalResourceUuid, String externalResourceType) {
 		@SuppressWarnings("unchecked")
 		List<ResourceEventMapping> mappings = sessionFactory
-				.getCurrentSession()
-				.createQuery(
-					MAPPING_FETCH + "where a.provider.uuid = :providerUuid and p.code = :oauthProviderCode "
-							+ "and m.internalResourceType = :type and m.internalResourceUuid = :uuid "
-							+ "and m.voided = false and e.voided = false "
-							+ "and e.status = :status and e.externalResourceType = :externalResourceType")
-				.setParameter("providerUuid", providerUuid)
-				.setParameter("oauthProviderCode", oauthProviderCode)
-				.setParameter("type", internalResourceType)
-				.setParameter("uuid", internalResourceUuid)
-				.setParameter("status", ExternalEvent.STATUS_ACTIVE)
-				.setParameter("externalResourceType", externalResourceType)
-				.list();
+		        .getCurrentSession()
+		        .createQuery(
+		            MAPPING_FETCH + "where a.provider.uuid = :providerUuid and p.code = :oauthProviderCode "
+		                    + "and m.internalResourceType = :type and m.internalResourceUuid = :uuid "
+		                    + "and m.voided = false and e.voided = false "
+		                    + "and e.status = :status and e.externalResourceType = :externalResourceType")
+		        .setParameter("providerUuid", providerUuid).setParameter("oauthProviderCode", oauthProviderCode)
+		        .setParameter("type", internalResourceType).setParameter("uuid", internalResourceUuid)
+		        .setParameter("status", ExternalEvent.STATUS_ACTIVE)
+		        .setParameter("externalResourceType", externalResourceType).list();
 		
 		return mappings.isEmpty() ? null : mappings.get(0).getExternalEvent();
 	}

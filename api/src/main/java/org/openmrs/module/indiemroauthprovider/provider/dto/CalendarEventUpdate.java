@@ -14,6 +14,8 @@ public class CalendarEventUpdate {
 	
 	private String timeZone;
 	
+	private boolean createMeet;
+	
 	public String getTitle() {
 		return title;
 	}
@@ -52,5 +54,13 @@ public class CalendarEventUpdate {
 	
 	public void setTimeZone(String timeZone) {
 		this.timeZone = timeZone;
+	}
+	
+	public boolean isCreateMeet() {
+		return createMeet;
+	}
+	
+	public void setCreateMeet(boolean createMeet) {
+		this.createMeet = createMeet;
 	}
 }
