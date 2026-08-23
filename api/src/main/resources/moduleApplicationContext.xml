@@ -42,6 +42,21 @@
 		<property name="sessionFactory" ref="dbSessionFactory" />
 	</bean>
 
+	<bean id="indiemroauthprovider.ClinicFormDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.ClinicFormDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.FormShareDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.FormShareDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
+	<bean id="indiemroauthprovider.FormSubmissionDao"
+	      class="org.openmrs.module.indiemroauthprovider.dao.impl.FormSubmissionDaoImpl">
+		<property name="sessionFactory" ref="dbSessionFactory" />
+	</bean>
+
 	<bean id="indiemroauthprovider.OAuthConnectService"
 	      class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
 		<property name="transactionManager" ref="transactionManager" />
@@ -94,6 +109,21 @@
 		</property>
 	</bean>
 
+	<bean id="indiemroauthprovider.ClinicFormService"
+	      class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="preInterceptors" ref="serviceInterceptors" />
+		<property name="transactionAttributeSource" ref="transactionAttributeSource" />
+		<property name="target">
+			<bean class="org.openmrs.module.indiemroauthprovider.api.impl.ClinicFormServiceImpl">
+				<property name="clinicFormDao" ref="indiemroauthprovider.ClinicFormDao" />
+				<property name="formShareDao" ref="indiemroauthprovider.FormShareDao" />
+				<property name="formSubmissionDao" ref="indiemroauthprovider.FormSubmissionDao" />
+				<property name="googleFormsRelayClient" ref="indiemroauthprovider.GoogleFormsRelayClient" />
+			</bean>
+		</property>
+	</bean>
+
 	<bean parent="serviceContext">
 		<property name="moduleService">
 			<list merge="true">
@@ -117,6 +147,15 @@
 			<list merge="true">
 				<value>org.openmrs.module.indiemroauthprovider.api.TeleconsultService</value>
 				<ref bean="indiemroauthprovider.TeleconsultService" />
+			</list>
+		</property>
+	</bean>
+
+	<bean parent="serviceContext">
+		<property name="moduleService">
+			<list merge="true">
+				<value>org.openmrs.module.indiemroauthprovider.api.ClinicFormService</value>
+				<ref bean="indiemroauthprovider.ClinicFormService" />
 			</list>
 		</property>
 	</bean>
