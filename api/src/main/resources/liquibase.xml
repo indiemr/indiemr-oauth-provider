@@ -440,4 +440,164 @@
 			<column name="uuid" valueComputed="uuid()" />
 		</insert>
 	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-08-24-010" author="indiemr">
+		<comment>Create indiemr_clinic_form table (clinic form relay registry)</comment>
+		<createTable tableName="indiemr_clinic_form">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="location_uuid" type="varchar(38)">
+				<constraints nullable="false" />
+			</column>
+			<column name="form_type" type="varchar(32)">
+				<constraints nullable="false" />
+			</column>
+			<column name="google_form_id" type="varchar(191)">
+				<constraints nullable="false" />
+			</column>
+			<!-- Mirrors google_form_id while the row is usable, NULL once DISABLED. MySQL allows
+			     many NULLs in a unique index, so this gives us "globally unique among non-DISABLED
+			     rows" in the DB instead of in a racy service-level check. -->
+			<column name="active_form_id" type="varchar(191)" />
+			<column name="prefill_base" type="varchar(2048)" />
+			<column name="entry_token" type="varchar(64)" />
+			<column name="entry_name" type="varchar(64)" />
+			<column name="entry_age" type="varchar(64)" />
+			<column name="reference_question_id" type="varchar(64)" />
+			<column name="owner_email" type="varchar(255)" />
+			<column name="status" type="varchar(32)" defaultValue="PENDING_SHARE">
+				<constraints nullable="false" />
+			</column>
+			<column name="last_error" type="varchar(1024)" />
+			<column name="last_polled_at" type="datetime" />
+			<column name="created_by" type="int" />
+			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+			<column name="updated_by" type="int" />
+			<column name="updated_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addUniqueConstraint
+		    constraintName="uk_indiemr_clinic_form_location_type"
+		    tableName="indiemr_clinic_form"
+		    columnNames="location_uuid, form_type" />
+
+		<addUniqueConstraint
+		    constraintName="uk_indiemr_clinic_form_active_form_id"
+		    tableName="indiemr_clinic_form"
+		    columnNames="active_form_id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_clinic_form_created_by"
+		    baseTableName="indiemr_clinic_form"
+		    baseColumnNames="created_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_clinic_form_updated_by"
+		    baseTableName="indiemr_clinic_form"
+		    baseColumnNames="updated_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-08-24-011" author="indiemr">
+		<comment>Create indiemr_form_share table (one row per Share click)</comment>
+		<createTable tableName="indiemr_form_share">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="clinic_form_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<column name="patient_uuid" type="varchar(38)">
+				<constraints nullable="false" />
+			</column>
+			<column name="token" type="varchar(64)">
+				<constraints nullable="false" unique="true" />
+			</column>
+			<column name="shared_by" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="status" type="varchar(20)" defaultValue="SHARED">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_form_share_clinic_form"
+		    baseTableName="indiemr_form_share"
+		    baseColumnNames="clinic_form_id"
+		    referencedTableName="indiemr_clinic_form"
+		    referencedColumnNames="id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_form_share_shared_by"
+		    baseTableName="indiemr_form_share"
+		    baseColumnNames="shared_by"
+		    referencedTableName="users"
+		    referencedColumnNames="user_id" />
+
+		<createIndex indexName="idx_indiemr_form_share_patient" tableName="indiemr_form_share">
+			<column name="patient_uuid" />
+		</createIndex>
+
+		<createIndex indexName="idx_indiemr_form_share_form_status" tableName="indiemr_form_share">
+			<column name="clinic_form_id" />
+			<column name="status" />
+		</createIndex>
+	</changeSet>
+
+	<changeSet id="indiemroauthprovider-2026-08-24-012" author="indiemr">
+		<comment>Create indiemr_form_submission table (fetched Google Form responses)</comment>
+		<createTable tableName="indiemr_form_submission">
+			<column name="id" type="bigint" autoIncrement="true">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="clinic_form_id" type="bigint">
+				<constraints nullable="false" />
+			</column>
+			<!-- NULL = unresolved bucket: a response whose reference token was missing or mangled. -->
+			<column name="form_share_id" type="bigint" />
+			<column name="google_response_id" type="varchar(191)">
+				<constraints nullable="false" unique="true" />
+			</column>
+			<column name="answers_json" type="text" />
+			<column name="submitted_at" type="datetime" />
+			<column name="fetched_at" type="datetime" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_form_submission_clinic_form"
+		    baseTableName="indiemr_form_submission"
+		    baseColumnNames="clinic_form_id"
+		    referencedTableName="indiemr_clinic_form"
+		    referencedColumnNames="id" />
+
+		<addForeignKeyConstraint
+		    constraintName="fk_indiemr_form_submission_share"
+		    baseTableName="indiemr_form_submission"
+		    baseColumnNames="form_share_id"
+		    referencedTableName="indiemr_form_share"
+		    referencedColumnNames="id" />
+
+		<createIndex indexName="idx_indiemr_form_submission_share" tableName="indiemr_form_submission">
+			<column name="form_share_id" />
+		</createIndex>
+
+		<createIndex indexName="idx_indiemr_form_submission_form" tableName="indiemr_form_submission">
+			<column name="clinic_form_id" />
+		</createIndex>
+	</changeSet>
+
 </databaseChangeLog>

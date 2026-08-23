@@ -41,6 +41,29 @@ public class ModuleConfigLoader {
 		return resolve("INDIEMR_OAUTH_GOOGLE_REDIRECT_URI", "google.redirect-uri");
 	}
 	
+	/**
+	 * Clinic Form Relay creds. Deliberately a SEPARATE Google client from the teleconsult one above
+	 * (verification and consent screens are per-project), and deliberately not global properties —
+	 * a GP is readable over REST by anyone holding View Global Properties (design rule R5).
+	 */
+	public String getFormsClientId() {
+		return resolve("INDIEMR_FORMS_CLIENT_ID", "forms-relay.client-id");
+	}
+	
+	public String getFormsClientSecret() {
+		return resolve("INDIEMR_FORMS_CLIENT_SECRET", "forms-relay.client-secret");
+	}
+	
+	/** Refresh token of the single platform identity that reads every linked clinic form. */
+	public String getFormsPlatformRefreshToken() {
+		return resolve("INDIEMR_FORMS_PLATFORM_REFRESH_TOKEN", "forms-relay.platform-refresh-token");
+	}
+	
+	/** The account added as Editor on each clinic form, e.g. indiemr1@gmail.com. */
+	public String getFormsPlatformAccountEmail() {
+		return resolve("INDIEMR_FORMS_PLATFORM_ACCOUNT_EMAIL", "forms-relay.platform-account-email");
+	}
+	
 	private String resolve(String envKey, String dottedKey) {
 		String env = System.getenv(envKey);
 		if (env != null && !env.trim().isEmpty()) {
