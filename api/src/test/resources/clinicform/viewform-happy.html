@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><head><title>Intake form</title></head><body>
+<div>Rendered form markup would go here.</div>
+<!-- FIXTURE NOTE - do not "tidy" this file.
+     Two pieces of question text are deliberately malformed and are what give the parser tests
+     their teeth:
+       item 222 title  Weight .kg          - an unmatched opening bracket inside a plain string
+       item 555 option Cough "dry .only"   - an unmatched opening bracket between escaped quotes
+     Balance those brackets and the bracket-balancer and escape-handling tests still pass while
+     the parser is broken. Verified by mutation: breaking string tracking or escape handling in
+     GoogleFormsRelayClient makes 4 tests fail only because these are unmatched. -->
+<script type="text/javascript" nonce="testnonce">
+var FB_PUBLIC_LOAD_DATA_ = [null,["Clinic intake",[
+[111,"Reference code","Filled in automatically by your clinic. [do not change]",0,[[2000001,null,1,null,[],null,null,null,null,null,[]]],null,null,null,null,null,null,[]],
+[222,"Weight [kg",null,0,[[2000002,null,0,null,[],null,null,null,null,null,[]]],null,null,null,null,null,null,[]],
+[333,"Section: history — please answer [all]",null,8,null,null,null,null,null,null,null,[]],
+[444,"Age",null,0,[[2000003,null,0,null,[],null,null,null,null,null,[]]],null,null,null,null,null,null,[]],
+[555,"Symptoms — tick all that apply",null,4,[[2000004,[["Fever",null,null,null,false],["Cough \"dry [only\"",null,null,null,false]],0,null,[],null,null,null,null,null,[]]],null,null,null,null,null,null,[]],
+[666,"Clinic banner [logo]",null,11,null,null,null,null,null,null,null,[]]
+],null,null,null,null,null,null,null,null,"Intake form",29,null,null,null,null,null,null,[2]],"/forms","Intake form",null,null,null,null,null,"",null,0,0,null,"",null,"",0,"",[],null,0];
+</script>
+</body></html>
