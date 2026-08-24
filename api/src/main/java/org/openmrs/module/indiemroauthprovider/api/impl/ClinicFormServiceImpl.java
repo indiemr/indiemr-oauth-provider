@@ -163,13 +163,11 @@ public class ClinicFormServiceImpl extends BaseOpenmrsService implements ClinicF
 		googleFormsRelayClient.tryEnsurePublished(formId);
 		JsonNode formJson = googleFormsRelayClient.getForm(formId);
 		
-		String questionId = findQuestionId(formJson, form.getReferenceQuestionId());
-		if (questionId == null) {
-			questionId = googleFormsRelayClient.addReferenceQuestion(formId, REFERENCE_FIELD_TITLE,
-			    REFERENCE_FIELD_DESCRIPTION);
+		ReferenceQuestion reference = resolveReferenceQuestion(formId, formJson, form.getReferenceQuestionId());
+		if (reference.added) {
 			formJson = googleFormsRelayClient.getForm(formId);
 		}
-		form.setReferenceQuestionId(questionId);
+		form.setReferenceQuestionId(reference.questionId);
 		capturePrefillEntries(form, formJson);
 		
 		form.setStatus(ClinicForm.STATUS_ACTIVE);
@@ -251,18 +249,21 @@ public class ClinicFormServiceImpl extends BaseOpenmrsService implements ClinicF
 		JsonNode formJson = googleFormsRelayClient.getForm(formId);
 		
 		// Form-drift self-heal: clinics stay free to edit their own questions, so the reference field
-		// can simply vanish. We are Editor — put it back and re-capture the prefill id rather than
-		// locking the clinic's form. Shares minted during the gap land unresolved, which is safe.
-		if (findQuestionId(formJson, form.getReferenceQuestionId()) == null) {
-			log.warn("Clinic form " + formId + ": reference field is missing — re-adding it");
-			form.setReferenceQuestionId(googleFormsRelayClient.addReferenceQuestion(formId, REFERENCE_FIELD_TITLE,
-			    REFERENCE_FIELD_DESCRIPTION));
-			formJson = googleFormsRelayClient.getForm(formId);
+		// can simply vanish. We are Editor — adopt it back (or put it back) and re-capture the prefill
+		// id rather than locking the clinic's form. An adopted field carries a different entry id from
+		// the one we stored, so it re-captures exactly like a re-added one. Shares minted during the
+		// gap land unresolved, which is safe.
+		ReferenceQuestion reference = resolveReferenceQuestion(formId, formJson, form.getReferenceQuestionId());
+		if (reference.unchanged) {
+			form.setLastError(null);
+		} else {
+			form.setReferenceQuestionId(reference.questionId);
+			if (reference.added) {
+				formJson = googleFormsRelayClient.getForm(formId);
+			}
 			capturePrefillEntries(form, formJson);
 			form.setLastError("The reference field was removed from the form and has been restored. Forms shared in "
 			        + "the meantime may need to be sent again.");
-		} else {
-			form.setLastError(null);
 		}
 		if (ClinicForm.STATUS_BROKEN.equals(form.getStatus())) {
 			form.setStatus(ClinicForm.STATUS_ACTIVE);
@@ -485,6 +486,77 @@ public class ClinicFormServiceImpl extends BaseOpenmrsService implements ClinicF
 			return null;
 		}
 		return questionIdsInOrder(formJson).contains(questionId) ? questionId : null;
+	}
+	
+	/**
+	 * Adopt-by-title. Adding the reference question is a Google write that no DB rollback can undo, so
+	 * a half-finished {@code /link} (or a manual re-register) leaves an orphan question behind on the
+	 * clinic's own form. Matching our own title lets the next run take that orphan over instead of
+	 * stacking another copy on top of it.
+	 *
+	 * @return the questionId of the FIRST question carrying {@code title}, or null when none does
+	 */
+	private static String findQuestionIdByTitle(JsonNode formJson, String title) {
+		List<String> questionIds = questionIdsInOrder(formJson);
+		List<String> titles = titlesInOrder(formJson);
+		String first = null;
+		int matches = 0;
+		for (int i = 0; i < titles.size(); i++) {
+			if (!title.equals(titles.get(i)) || questionIds.get(i) == null) {
+				continue;
+			}
+			matches++;
+			if (first == null) {
+				first = questionIds.get(i);
+			}
+		}
+		if (matches > 1) {
+			// Never removed here: the extra copies are on the clinic's own form and may hold real answers.
+			log.warn("Form carries " + matches + " questions titled \"" + title + "\" — adopting the first");
+		}
+		return first;
+	}
+	
+	/**
+	 * Resolve the reference question, in the order that costs the clinic's form the least: the stored
+	 * id when it is still there, else an existing question with our own title (adopted — no write at
+	 * all), and only then a freshly added one.
+	 */
+	ReferenceQuestion resolveReferenceQuestion(String formId, JsonNode formJson, String storedQuestionId) {
+		String stored = findQuestionId(formJson, storedQuestionId);
+		if (stored != null) {
+			return new ReferenceQuestion(stored, true, false);
+		}
+		String adopted = findQuestionIdByTitle(formJson, REFERENCE_FIELD_TITLE);
+		if (adopted != null) {
+			log.warn("Clinic form " + formId + ": adopting the existing \"" + REFERENCE_FIELD_TITLE + "\" question ("
+			        + adopted + ") instead of adding another");
+			return new ReferenceQuestion(adopted, false, false);
+		}
+		if (storedQuestionId != null && !storedQuestionId.isEmpty()) {
+			log.warn("Clinic form " + formId + ": reference field is missing — re-adding it");
+		}
+		return new ReferenceQuestion(googleFormsRelayClient.addReferenceQuestion(formId, REFERENCE_FIELD_TITLE,
+		    REFERENCE_FIELD_DESCRIPTION), false, true);
+	}
+	
+	/** Outcome of {@link #resolveReferenceQuestion}. */
+	static final class ReferenceQuestion {
+		
+		/** Never null. */
+		final String questionId;
+		
+		/** The stored id was still on the form — nothing to re-capture. */
+		final boolean unchanged;
+		
+		/** A question was written to the clinic's form — any form json read before this is now stale. */
+		final boolean added;
+		
+		ReferenceQuestion(String questionId, boolean unchanged, boolean added) {
+			this.questionId = questionId;
+			this.unchanged = unchanged;
+			this.added = added;
+		}
 	}
 	
 	// ---------------------------------------------------------------- helpers
