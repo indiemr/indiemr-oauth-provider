@@ -20,51 +20,72 @@ import org.openmrs.module.indiemroauthprovider.exception.ClinicFormException;
  * {@code FB_PUBLIC_LOAD_DATA_} array on a form's viewform page. Pure static methods — no OpenMRS
  * context, no Spring, no mocks.
  * <p>
- * <b>What these fixtures do and do not prove.</b> They encode the array shape the implementation
- * assumes — {@code root[1][1]} is the item list, an item's prefill id sits at {@code item[4][0][0]}
- * , and a non-question item holds null there. That shape comes from the format's common public
- * description and the intake PoC's report that scraping matched hand-captured ids; it was NOT
- * captured from a live Google page in this test's authorship. So these tests lock in the parser's
- * behaviour against regressions and prove the bracket balancer and the loud-failure paths work —
- * they do NOT independently verify Google's real layout. A live /link run remains the only proof of
- * that, and if the real shape differs the parser fails loud with a manual-entry fallback rather
- * than mis-mapping. Replace the happy-path fixture with a real captured page when one is available.
+ * <b>Which fixture is real.</b> {@code viewform-live-capture.html} is a VERBATIM capture of a live
+ * Google viewform page, fetched anonymously on 2026-08-24 during the first end-to-end {@code /link}
+ * run (a throwaway intake form owned by the clinic test account, registered through the real
+ * Picker/Drive/Forms chain). It settles what the earlier synthetic fixture could only assume: the
+ * item list really does live at {@code root[1][1]}, an item's prefill id really does sit at
+ * {@code item[4][0][0]}, and a non-question item really does hold null there. The ids asserted
+ * below were cross-checked against the registry row the live run wrote, so the fixture and the
+ * production path agree on the same five slots.
  * <p>
- * The happy fixture carries two DELIBERATELY unmatched brackets — one in a plain string, one
- * between escaped quotes. They are load-bearing: with every bracket balanced, these tests pass even
- * against a parser that ignores string literals entirely. Confirmed by mutation.
+ * <b>Which fixture is synthetic, and why it stays.</b> {@code viewform-hazards.html} is hand-built.
+ * Real captures are clean — the live page carries no bracket inside question text and no escaped
+ * quote anywhere in the load-data array — so a live capture alone cannot exercise the bracket
+ * balancer or the string-literal handling at all. The hazard fixture carries two DELIBERATELY
+ * unmatched brackets, one in a plain string and one between escaped quotes. They are load-bearing:
+ * with every bracket balanced, those tests pass even against a parser that ignores string literals
+ * entirely. Confirmed by mutation — do not "fix" them.
+ * <p>
+ * The loud-failure fixtures stay synthetic for the same reason: a form that is not publicly
+ * fillable serves a redirect stub, and registering such a form silently would mint prefill links
+ * that can never work.
  */
 public class GoogleFormsRelayClientParseTest {
 	
-	/** Item order in the happy fixture, mirroring a form that exercises every parser branch. */
-	private static final List<String> EXPECTED_ENTRY_IDS = Arrays.asList("2000001", "2000002", null, "2000003", "2000004",
-	    null);
+	/**
+	 * The live form's five items in order: Reference code (added by /link at index 0), Age, a
+	 * title-and-description item, Chief complaint, Name.
+	 */
+	private static final List<String> EXPECTED_LIVE_ENTRY_IDS = Arrays.asList("471888886", "2010899856", null, "1032911868",
+	    "2144456462");
 	
-	// ---------------------------------------------------------------- happy path
+	/** Item order in the synthetic hazard fixture, which exercises every parser branch. */
+	private static final List<String> EXPECTED_HAZARD_ENTRY_IDS = Arrays.asList("2000001", "2000002", null, "2000003",
+	    "2000004", null);
+	
+	// ---------------------------------------------------------------- happy path (real page)
 	
 	@Test
 	public void parseEntryIds_returnsOneEntryPerItemInFormOrder() {
-		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-happy.html"));
-		assertEquals("one slot per form item, in item order", EXPECTED_ENTRY_IDS, entryIds);
+		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-live-capture.html"));
+		assertEquals("one slot per form item, in item order", EXPECTED_LIVE_ENTRY_IDS, entryIds);
+	}
+	
+	@Test
+	public void parseEntryIds_findsTheReferenceQuestionFirstOnALiveLinkedForm() {
+		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-live-capture.html"));
+		// /link inserts the reference question at index 0, and the share URL is built from whatever
+		// id lands in that slot — if this moves, every prefilled token goes into the wrong field.
+		assertEquals("471888886", entryIds.get(0));
 	}
 	
 	@Test
 	public void parseEntryIds_keepsIndexAlignmentAcrossNonQuestionItems() {
-		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-happy.html"));
-		// The list is index-correlated against the Forms API item list, so a section header and an
-		// image must still occupy their slot — collapsing them would shift every id after them.
-		assertEquals("length must equal the item count, not the question count", 6, entryIds.size());
-		assertNull("section header carries no prefill id", entryIds.get(2));
-		assertNull("image item carries no prefill id", entryIds.get(5));
-		assertNotNull("the question after the section header keeps its own id", entryIds.get(3));
-		assertEquals("2000003", entryIds.get(3));
+		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-live-capture.html"));
+		// The list is index-correlated against the Forms API item list, so a title-and-description
+		// item must still occupy its slot — collapsing it would shift every id after it.
+		assertEquals("length must equal the item count, not the question count", 5, entryIds.size());
+		assertNull("title-and-description item carries no prefill id", entryIds.get(2));
+		assertNotNull("the question after it keeps its own id", entryIds.get(3));
+		assertEquals("1032911868", entryIds.get(3));
 	}
 	
 	// ---------------------------------------------------------------- string-literal hazards
 	
 	@Test
 	public void parseEntryIds_isNotTruncatedByBracketsInsideQuestionText() {
-		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-happy.html"));
+		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-hazards.html"));
 		// Three items carry '[' or ']' in their own title/description. A naive scan that counted
 		// brackets inside string literals would close the array early and lose the later items.
 		assertEquals("parser reached the final item despite brackets in question text", 6, entryIds.size());
@@ -74,12 +95,22 @@ public class GoogleFormsRelayClientParseTest {
 	
 	@Test
 	public void parseEntryIds_treatsEscapedQuotesAsPartOfTheString() {
-		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-happy.html"));
+		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-hazards.html"));
 		// Item 1's title contains \" and item 4's options contain \" — mishandling the escape would
 		// flip the in-string flag and corrupt bracket depth for everything that follows.
 		assertEquals("2000002", entryIds.get(1));
 		assertEquals("2000004", entryIds.get(4));
-		assertEquals(EXPECTED_ENTRY_IDS, entryIds);
+		assertEquals(EXPECTED_HAZARD_ENTRY_IDS, entryIds);
+	}
+	
+	@Test
+	public void parseEntryIds_keepsIndexAlignmentAcrossEveryNonQuestionItemType() {
+		List<String> entryIds = GoogleFormsRelayClient.parseEntryIds(fixture("viewform-hazards.html"));
+		// The live capture only contains a title-and-description item; images and section breaks
+		// have to come from the synthetic fixture.
+		assertEquals(EXPECTED_HAZARD_ENTRY_IDS, entryIds);
+		assertNull("section header carries no prefill id", entryIds.get(2));
+		assertNull("image item carries no prefill id", entryIds.get(5));
 	}
 	
 	// ---------------------------------------------------------------- loud failures
