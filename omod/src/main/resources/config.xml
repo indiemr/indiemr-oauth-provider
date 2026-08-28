@@ -26,4 +26,16 @@
 		<file>messages.properties</file>
 	</messages>
 
+	<!-- Registry ops (link/register/disable a clinic's form) — admin roles. -->
+	<privilege>
+		<name>Manage Clinic Forms</name>
+		<description>Able to link and configure the clinic's Google Forms</description>
+	</privilege>
+
+	<!-- Day-to-day relay use (share a form with a patient, read the answers back) — all staff roles. -->
+	<privilege>
+		<name>Share Clinic Forms</name>
+		<description>Able to share a clinic form with a patient and view the responses</description>
+	</privilege>
+
 </module>

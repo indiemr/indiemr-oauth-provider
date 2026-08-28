@@ -10,6 +10,10 @@ public final class PrivilegeConstants {
 	
 	public static final String MANAGE_EVENTS = "Manage Events";
 	
+	public static final String MANAGE_CLINIC_FORMS = "Manage Clinic Forms";
+	
+	public static final String SHARE_CLINIC_FORMS = "Share Clinic Forms";
+	
 	private PrivilegeConstants() {
 	}
 }
